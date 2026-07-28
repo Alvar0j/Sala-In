@@ -1,0 +1,715 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00FB01921CE4D85DB7902BC7 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E404B1555CD1AF75201A6D7 /* DomainModels.swift */; };
+		061A86C65F4DAA22C72772A6 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BA139136638DDFC36F1279C /* AppViewModel.swift */; };
+		0C696B24EDB8CB155FBF53C8 /* PersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6780F4664F3D83DEE5FF8123 /* PersistenceTests.swift */; };
+		18ACAB27EF2D7DE7D6C462DE /* DemoRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E57DD6FF8119988FB540F6C /* DemoRunner.swift */; };
+		1BE85855AE89ACBF5A15EACF /* UDPTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CDD6F701FF1A761EAA726A /* UDPTransport.swift */; };
+		1D99FC9FA3653CC0910AD509 /* BonjourDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28AEA138EFDAEC3FA127A54A /* BonjourDiscoveryService.swift */; };
+		21D661756AB9ED90F0C36EA9 /* QLabRemoteCuesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6F5BC8871D3E8D1CF35E49 /* QLabRemoteCuesApp.swift */; };
+		3CBAB1E728263CBB5F595276 /* CueListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A78122BA00AAE099BC7C572 /* CueListView.swift */; };
+		40A4ECA8454963D8B2182982 /* DemosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7238127FC9D9031DA17B271F /* DemosView.swift */; };
+		411566A692DCE8B3A195E1BF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DE17F889B2DF4211D1664891 /* Assets.xcassets */; };
+		5FDC99069B6B45D971BDC1FF /* OSCCodecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513ABC7BAFCD308585C304E4 /* OSCCodecTests.swift */; };
+		60EC0D3AA41376CFC782958D /* QLabRemoteCuesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D99E53BB7AAAE7D293AB70 /* QLabRemoteCuesUITests.swift */; };
+		612A4B40CB317A063993C658 /* ConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAFA5F8796ED252CCBB4AD95 /* ConnectionView.swift */; };
+		6B73AE6387F9E699EDBE195B /* ShowModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506EA0EE23FDDA8A6AF36FEB /* ShowModeView.swift */; };
+		85215801EE64DE5EE2F4083F /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E16C847E8DA77B747610040 /* Persistence.swift */; };
+		869985B348BA2CFC42D3FFFA /* QLabService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5196275C79E38C30630BC72 /* QLabService.swift */; };
+		8DBEE8E5D7FE1BA17F1FF33A /* DemoEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 213F086EB23B9508FE1A3344 /* DemoEditorView.swift */; };
+		A1D172E0694901A1ECE30394 /* ConstellationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 323D88FCF6514AF1389487C8 /* ConstellationView.swift */; };
+		A23536F5B12D35F845C41613 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664081F2C54B65866F7CF462 /* Foundation.framework */; };
+		A70438836F8DB133591E8A80 /* ActivityLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA6B45AB4459B88BEC8DC44 /* ActivityLogView.swift */; };
+		AED3225B768009CE27DA7B4E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664081F2C54B65866F7CF462 /* Foundation.framework */; };
+		B7030B19D1781A7BCEA49602 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664081F2C54B65866F7CF462 /* Foundation.framework */; };
+		C187150B101F667721E7DDD3 /* PanelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 436AC0CA6894A41AFF682AAC /* PanelsView.swift */; };
+		D8855DF330B2910680D836FD /* OSC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A4CFE4938CD16826DAD7536 /* OSC.swift */; };
+		E0F96E46016159A11A7BEEF4 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9C7251999531D499502586 /* RootView.swift */; };
+		EC9873A8D1E9B21F3BF84BD2 /* QLabOSCPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF40D4D32F20751AF81B5305 /* QLabOSCPath.swift */; };
+		F425CD69DCEF577520F6476F /* ControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E185E52D47BEB4199994698 /* ControlView.swift */; };
+		FBE5154806EBBEA23B887F20 /* DemoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8987E4B9633EA83123FF046C /* DemoModels.swift */; };
+		FD67619EF87B9E38503A5524 /* QLabServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEBFA3F033D8F37D46161078 /* QLabServiceTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		4511AD8122A5F61D19065641 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C41616B1B2D58CF746BF421F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 013FB55902563C6DA3A911E9;
+			remoteInfo = QLabRemoteCues;
+		};
+		6CF0A18CD1E2964860C7C34E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C41616B1B2D58CF746BF421F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 013FB55902563C6DA3A911E9;
+			remoteInfo = QLabRemoteCues;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1E404B1555CD1AF75201A6D7 /* DomainModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DomainModels.swift; sourceTree = "<group>"; };
+		213F086EB23B9508FE1A3344 /* DemoEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DemoEditorView.swift; sourceTree = "<group>"; };
+		28AEA138EFDAEC3FA127A54A /* BonjourDiscoveryService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BonjourDiscoveryService.swift; sourceTree = "<group>"; };
+		2A78122BA00AAE099BC7C572 /* CueListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CueListView.swift; sourceTree = "<group>"; };
+		2C3FFB6F1A878628B2F84109 /* QLabRemoteCuesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QLabRemoteCuesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		323D88FCF6514AF1389487C8 /* ConstellationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationView.swift; sourceTree = "<group>"; };
+		436AC0CA6894A41AFF682AAC /* PanelsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PanelsView.swift; sourceTree = "<group>"; };
+		4829D324A8455E82AE43B7C0 /* QLabRemoteCuesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QLabRemoteCuesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4E185E52D47BEB4199994698 /* ControlView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ControlView.swift; sourceTree = "<group>"; };
+		506EA0EE23FDDA8A6AF36FEB /* ShowModeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShowModeView.swift; sourceTree = "<group>"; };
+		513ABC7BAFCD308585C304E4 /* OSCCodecTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OSCCodecTests.swift; sourceTree = "<group>"; };
+		5BA139136638DDFC36F1279C /* AppViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		664081F2C54B65866F7CF462 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		6780F4664F3D83DEE5FF8123 /* PersistenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PersistenceTests.swift; sourceTree = "<group>"; };
+		6E57DD6FF8119988FB540F6C /* DemoRunner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DemoRunner.swift; sourceTree = "<group>"; };
+		7238127FC9D9031DA17B271F /* DemosView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DemosView.swift; sourceTree = "<group>"; };
+		8987E4B9633EA83123FF046C /* DemoModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DemoModels.swift; sourceTree = "<group>"; };
+		8A4CFE4938CD16826DAD7536 /* OSC.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OSC.swift; sourceTree = "<group>"; };
+		8C6F5BC8871D3E8D1CF35E49 /* QLabRemoteCuesApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QLabRemoteCuesApp.swift; sourceTree = "<group>"; };
+		9E16C847E8DA77B747610040 /* Persistence.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
+		AF40D4D32F20751AF81B5305 /* QLabOSCPath.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QLabOSCPath.swift; sourceTree = "<group>"; };
+		B2D99E53BB7AAAE7D293AB70 /* QLabRemoteCuesUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QLabRemoteCuesUITests.swift; sourceTree = "<group>"; };
+		C9CDD6F701FF1A761EAA726A /* UDPTransport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UDPTransport.swift; sourceTree = "<group>"; };
+		CEA6B45AB4459B88BEC8DC44 /* ActivityLogView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityLogView.swift; sourceTree = "<group>"; };
+		DE17F889B2DF4211D1664891 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		DEBFA3F033D8F37D46161078 /* QLabServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QLabServiceTests.swift; sourceTree = "<group>"; };
+		E5196275C79E38C30630BC72 /* QLabService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QLabService.swift; sourceTree = "<group>"; };
+		EAFA5F8796ED252CCBB4AD95 /* ConnectionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectionView.swift; sourceTree = "<group>"; };
+		F1E13FE03C20F084CB66EACF /* QLabRemoteCues.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QLabRemoteCues.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FF9C7251999531D499502586 /* RootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		29AE792BC1357E2A20F6583D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A23536F5B12D35F845C41613 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		76CE94490D759E54E98036BB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AED3225B768009CE27DA7B4E /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D1651BACEBA88DCF9DD71B7D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B7030B19D1781A7BCEA49602 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		12BC45F734154E6B9F257DCF /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				8987E4B9633EA83123FF046C /* DemoModels.swift */,
+				1E404B1555CD1AF75201A6D7 /* DomainModels.swift */,
+				8A4CFE4938CD16826DAD7536 /* OSC.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		18645FC6538A1AC4FD9C58C4 /* QLabRemoteCuesUITests */ = {
+			isa = PBXGroup;
+			children = (
+				B2D99E53BB7AAAE7D293AB70 /* QLabRemoteCuesUITests.swift */,
+			);
+			path = QLabRemoteCuesUITests;
+			sourceTree = "<group>";
+		};
+		2F559846B269F8DE07C3711E /* QLabRemoteCuesTests */ = {
+			isa = PBXGroup;
+			children = (
+				513ABC7BAFCD308585C304E4 /* OSCCodecTests.swift */,
+				6780F4664F3D83DEE5FF8123 /* PersistenceTests.swift */,
+				DEBFA3F033D8F37D46161078 /* QLabServiceTests.swift */,
+			);
+			path = QLabRemoteCuesTests;
+			sourceTree = "<group>";
+		};
+		3251C82DAF2F38593BBF6A52 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3DD0A059858BB1FA7A8C1601 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		3DD0A059858BB1FA7A8C1601 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				664081F2C54B65866F7CF462 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		4BE32C1DB3E6C19F9CCD814E /* QLabRemoteCues */ = {
+			isa = PBXGroup;
+			children = (
+				9B8A176149AB16EEE43A6C23 /*  */,
+				F4A5E65BAB6E0EB48698EDEF /* Resources */,
+			);
+			path = QLabRemoteCues;
+			sourceTree = "<group>";
+		};
+		5CDD71F4EC0017DF404BC2EE /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				5BA139136638DDFC36F1279C /* AppViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		91A93851E63031AFB0F74FB3 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				8C6F5BC8871D3E8D1CF35E49 /* QLabRemoteCuesApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		9592984A0F4ED19445370062 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				CEA6B45AB4459B88BEC8DC44 /* ActivityLogView.swift */,
+				EAFA5F8796ED252CCBB4AD95 /* ConnectionView.swift */,
+				323D88FCF6514AF1389487C8 /* ConstellationView.swift */,
+				4E185E52D47BEB4199994698 /* ControlView.swift */,
+				2A78122BA00AAE099BC7C572 /* CueListView.swift */,
+				213F086EB23B9508FE1A3344 /* DemoEditorView.swift */,
+				7238127FC9D9031DA17B271F /* DemosView.swift */,
+				436AC0CA6894A41AFF682AAC /* PanelsView.swift */,
+				FF9C7251999531D499502586 /* RootView.swift */,
+				506EA0EE23FDDA8A6AF36FEB /* ShowModeView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		9B8A176149AB16EEE43A6C23 /*  */ = {
+			isa = PBXGroup;
+			children = (
+				91A93851E63031AFB0F74FB3 /* App */,
+				12BC45F734154E6B9F257DCF /* Models */,
+				B39469E9991DEC30B12B6A32 /* Services */,
+				5CDD71F4EC0017DF404BC2EE /* ViewModels */,
+				9592984A0F4ED19445370062 /* Views */,
+			);
+			name = "";
+			sourceTree = "<group>";
+		};
+		B39469E9991DEC30B12B6A32 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				28AEA138EFDAEC3FA127A54A /* BonjourDiscoveryService.swift */,
+				6E57DD6FF8119988FB540F6C /* DemoRunner.swift */,
+				9E16C847E8DA77B747610040 /* Persistence.swift */,
+				AF40D4D32F20751AF81B5305 /* QLabOSCPath.swift */,
+				E5196275C79E38C30630BC72 /* QLabService.swift */,
+				C9CDD6F701FF1A761EAA726A /* UDPTransport.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		B583C3AB9238E3516E5C4978 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F1E13FE03C20F084CB66EACF /* QLabRemoteCues.app */,
+				4829D324A8455E82AE43B7C0 /* QLabRemoteCuesTests.xctest */,
+				2C3FFB6F1A878628B2F84109 /* QLabRemoteCuesUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DA913E3ABEE9140B8468833B = {
+			isa = PBXGroup;
+			children = (
+				B583C3AB9238E3516E5C4978 /* Products */,
+				3251C82DAF2F38593BBF6A52 /* Frameworks */,
+				4BE32C1DB3E6C19F9CCD814E /* QLabRemoteCues */,
+				2F559846B269F8DE07C3711E /* QLabRemoteCuesTests */,
+				18645FC6538A1AC4FD9C58C4 /* QLabRemoteCuesUITests */,
+			);
+			sourceTree = "<group>";
+		};
+		F4A5E65BAB6E0EB48698EDEF /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				DE17F889B2DF4211D1664891 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		013FB55902563C6DA3A911E9 /* QLabRemoteCues */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6F270DBAF1D1CF0534A191E3 /* Build configuration list for PBXNativeTarget "QLabRemoteCues" */;
+			buildPhases = (
+				77FDDA69197F4A85E9746EBE /* Sources */,
+				D1651BACEBA88DCF9DD71B7D /* Frameworks */,
+				28ED735C2841540A33B19313 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = QLabRemoteCues;
+			productName = QLabRemoteCues;
+			productReference = F1E13FE03C20F084CB66EACF /* QLabRemoteCues.app */;
+			productType = "com.apple.product-type.application";
+		};
+		097FE3F1D44079951F53D360 /* QLabRemoteCuesTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ADE13A3537C8BA512DF6418B /* Build configuration list for PBXNativeTarget "QLabRemoteCuesTests" */;
+			buildPhases = (
+				B97BDA9793A3308CCD12DF84 /* Sources */,
+				76CE94490D759E54E98036BB /* Frameworks */,
+				4AD059E7722ACE45C6913833 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EC08FFF2E1D33D10FD63BF23 /* PBXTargetDependency */,
+			);
+			name = QLabRemoteCuesTests;
+			productName = QLabRemoteCuesTests;
+			productReference = 4829D324A8455E82AE43B7C0 /* QLabRemoteCuesTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		FF3C53163D6B20BC5CCB5986 /* QLabRemoteCuesUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1706F9389E8E9E4BEE4DDB3D /* Build configuration list for PBXNativeTarget "QLabRemoteCuesUITests" */;
+			buildPhases = (
+				4001AC18E1EFBBE7A5EE4A04 /* Sources */,
+				29AE792BC1357E2A20F6583D /* Frameworks */,
+				515326139D3FA8509E3D4C55 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6C07EDA58D50D88FBEB4F216 /* PBXTargetDependency */,
+			);
+			name = QLabRemoteCuesUITests;
+			productName = QLabRemoteCuesUITests;
+			productReference = 2C3FFB6F1A878628B2F84109 /* QLabRemoteCuesUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C41616B1B2D58CF746BF421F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					013FB55902563C6DA3A911E9 = {
+						DevelopmentTeam = GQ44QT8797;
+						ProvisioningStyle = Automatic;
+					};
+					097FE3F1D44079951F53D360 = {
+						DevelopmentTeam = GQ44QT8797;
+						ProvisioningStyle = Automatic;
+					};
+					FF3C53163D6B20BC5CCB5986 = {
+						DevelopmentTeam = GQ44QT8797;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = C75A3C5C03E8199042A306C6 /* Build configuration list for PBXProject "QLabRemoteCues" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = DA913E3ABEE9140B8468833B;
+			productRefGroup = B583C3AB9238E3516E5C4978 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				013FB55902563C6DA3A911E9 /* QLabRemoteCues */,
+				097FE3F1D44079951F53D360 /* QLabRemoteCuesTests */,
+				FF3C53163D6B20BC5CCB5986 /* QLabRemoteCuesUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		28ED735C2841540A33B19313 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				411566A692DCE8B3A195E1BF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4AD059E7722ACE45C6913833 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		515326139D3FA8509E3D4C55 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4001AC18E1EFBBE7A5EE4A04 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60EC0D3AA41376CFC782958D /* QLabRemoteCuesUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		77FDDA69197F4A85E9746EBE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				21D661756AB9ED90F0C36EA9 /* QLabRemoteCuesApp.swift in Sources */,
+				FBE5154806EBBEA23B887F20 /* DemoModels.swift in Sources */,
+				00FB01921CE4D85DB7902BC7 /* DomainModels.swift in Sources */,
+				D8855DF330B2910680D836FD /* OSC.swift in Sources */,
+				1D99FC9FA3653CC0910AD509 /* BonjourDiscoveryService.swift in Sources */,
+				18ACAB27EF2D7DE7D6C462DE /* DemoRunner.swift in Sources */,
+				85215801EE64DE5EE2F4083F /* Persistence.swift in Sources */,
+				EC9873A8D1E9B21F3BF84BD2 /* QLabOSCPath.swift in Sources */,
+				869985B348BA2CFC42D3FFFA /* QLabService.swift in Sources */,
+				1BE85855AE89ACBF5A15EACF /* UDPTransport.swift in Sources */,
+				061A86C65F4DAA22C72772A6 /* AppViewModel.swift in Sources */,
+				A70438836F8DB133591E8A80 /* ActivityLogView.swift in Sources */,
+				612A4B40CB317A063993C658 /* ConnectionView.swift in Sources */,
+				A1D172E0694901A1ECE30394 /* ConstellationView.swift in Sources */,
+				F425CD69DCEF577520F6476F /* ControlView.swift in Sources */,
+				3CBAB1E728263CBB5F595276 /* CueListView.swift in Sources */,
+				8DBEE8E5D7FE1BA17F1FF33A /* DemoEditorView.swift in Sources */,
+				40A4ECA8454963D8B2182982 /* DemosView.swift in Sources */,
+				C187150B101F667721E7DDD3 /* PanelsView.swift in Sources */,
+				E0F96E46016159A11A7BEEF4 /* RootView.swift in Sources */,
+				6B73AE6387F9E699EDBE195B /* ShowModeView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B97BDA9793A3308CCD12DF84 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5FDC99069B6B45D971BDC1FF /* OSCCodecTests.swift in Sources */,
+				0C696B24EDB8CB155FBF53C8 /* PersistenceTests.swift in Sources */,
+				FD67619EF87B9E38503A5524 /* QLabServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6C07EDA58D50D88FBEB4F216 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = QLabRemoteCues;
+			target = 013FB55902563C6DA3A911E9 /* QLabRemoteCues */;
+			targetProxy = 4511AD8122A5F61D19065641 /* PBXContainerItemProxy */;
+		};
+		EC08FFF2E1D33D10FD63BF23 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = QLabRemoteCues;
+			target = 013FB55902563C6DA3A911E9 /* QLabRemoteCues */;
+			targetProxy = 6CF0A18CD1E2964860C7C34E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		342A163BAAFA003FB1092736 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = QLabRemoteCues/Resources/QLabRemoteCues.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GQ44QT8797;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = QLabRemoteCues/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Sala IN";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.QLabRemoteCues;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		63ED7F8853B9C8D7C916FA83 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		771FE7424C9E0656CCCECB48 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GQ44QT8797;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.QLabRemoteCuesTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QLabRemoteCues.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/QLabRemoteCues";
+			};
+			name = Debug;
+		};
+		C7A3F2A40C07B1708FA62A60 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GQ44QT8797;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.QLabRemoteCuesTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QLabRemoteCues.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/QLabRemoteCues";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		CE9E06C3B386F1A898ACED77 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GQ44QT8797;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.QLabRemoteCuesUITests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		D2405B2B61ED2BE2545D35E3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GQ44QT8797;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.QLabRemoteCuesUITests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		EE62D4E5B1A811FED86C110C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = QLabRemoteCues/Resources/QLabRemoteCues.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GQ44QT8797;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = QLabRemoteCues/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Sala IN";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.QLabRemoteCues;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FFE872F5619FD750A2665784 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1706F9389E8E9E4BEE4DDB3D /* Build configuration list for PBXNativeTarget "QLabRemoteCuesUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D2405B2B61ED2BE2545D35E3 /* Release */,
+				CE9E06C3B386F1A898ACED77 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6F270DBAF1D1CF0534A191E3 /* Build configuration list for PBXNativeTarget "QLabRemoteCues" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				342A163BAAFA003FB1092736 /* Release */,
+				EE62D4E5B1A811FED86C110C /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ADE13A3537C8BA512DF6418B /* Build configuration list for PBXNativeTarget "QLabRemoteCuesTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C7A3F2A40C07B1708FA62A60 /* Release */,
+				771FE7424C9E0656CCCECB48 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C75A3C5C03E8199042A306C6 /* Build configuration list for PBXProject "QLabRemoteCues" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FFE872F5619FD750A2665784 /* Debug */,
+				63ED7F8853B9C8D7C916FA83 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C41616B1B2D58CF746BF421F /* Project object */;
+}
