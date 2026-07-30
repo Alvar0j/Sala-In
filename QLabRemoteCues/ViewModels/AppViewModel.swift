@@ -110,7 +110,10 @@ final class AppViewModel: ObservableObject {
             demos: demos,
             constellationButtons: constellationButtons,
             powerOnCommand: UserDefaults.standard.string(forKey: "roomPowerOnOSCCommand"),
-            powerOffCommand: UserDefaults.standard.string(forKey: "roomPowerOffOSCCommand")
+            powerOffCommand: UserDefaults.standard.string(forKey: "roomPowerOffOSCCommand"),
+            checkSpeakersCommand: UserDefaults.standard.string(forKey: "checkSpeakersOSCCommand"),
+            stopCheckSpeakersCommand: UserDefaults.standard.string(forKey: "stopCheckSpeakersOSCCommand"),
+            resetAVBCommand: UserDefaults.standard.string(forKey: "resetAVBOSCCommand")
         )
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("QLab-Remote-Cues.qlabremote.json")
         do {
@@ -143,6 +146,15 @@ final class AppViewModel: ObservableObject {
                 }
                 if let command = package.powerOffCommand {
                     UserDefaults.standard.set(command, forKey: "roomPowerOffOSCCommand")
+                }
+                if let command = package.checkSpeakersCommand {
+                    UserDefaults.standard.set(command, forKey: "checkSpeakersOSCCommand")
+                }
+                if let command = package.stopCheckSpeakersCommand {
+                    UserDefaults.standard.set(command, forKey: "stopCheckSpeakersOSCCommand")
+                }
+                if let command = package.resetAVBCommand {
+                    UserDefaults.standard.set(command, forKey: "resetAVBOSCCommand")
                 }
                 selectedProfileID = profiles.first?.id
                 persistence.saveProfiles(profiles)

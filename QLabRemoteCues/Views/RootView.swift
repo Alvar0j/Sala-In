@@ -1,13 +1,14 @@
 import SwiftUI
 
 enum AppSection: String, CaseIterable, Identifiable {
-    case demos = "Demos", constellation = "Constellation", connection = "Conexión", log = "Registro"
+    case demos = "Demos", constellation = "Constellation", connection = "Conexión", check = "Check", log = "Registro"
     var id: Self { self }
     var symbol: String {
         switch self {
         case .demos: "sparkles.rectangle.stack"
         case .constellation: "point.3.connected.trianglepath.dotted"
         case .connection: "network"
+        case .check: "checkmark.circle"
         case .log: "text.alignleft"
         }
     }
@@ -48,6 +49,7 @@ struct RootView: View {
         case .demos: DemosView(runner: model.demoRunner, qlab: model.qlab)
         case .constellation: ConstellationView(qlab: model.qlab)
         case .connection: ConnectionView(discovery: model.discovery, qlab: model.qlab)
+        case .check: CheckView(qlab: model.qlab)
         case .log: ActivityLogView(qlab: model.qlab)
         }
     }

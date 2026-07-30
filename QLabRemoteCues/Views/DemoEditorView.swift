@@ -332,24 +332,94 @@ struct DemoButtonsEditorView: View {
 }
 
 private enum DemoAppearanceOptions {
-    static let symbols = [
-        "sparkles.rectangle.stack", "play.rectangle.fill", "play.circle.fill",
-        "play.fill", "stop.fill", "playpause.fill", "pause.fill",
-        "checkmark.circle.fill", "arrow.counterclockwise", "curtains.closed", "gearshape.2.fill",
-        "power.circle.fill", "power.circle",
-        "film.fill", "video.fill", "tv.fill",
-        "music.note", "music.note.list", "speaker.wave.3.fill",
-        "waveform", "waveform.path.ecg", "headphones",
-        "lightbulb.fill", "flashlight.on.fill", "sun.max.fill",
-        "iphone", "ipad", "laptopcomputer",
-        "camera.fill", "viewfinder", "arkit",
-        "cube.fill", "shippingbox.fill", "square.3.layers.3d",
-        "figure.walk", "figure.dance", "person.2.fill",
-        "globe", "network", "dot.radiowaves.left.and.right",
-        "location.fill", "map.fill", "point.3.filled.connected.trianglepath.dotted",
-        "theatermasks.fill", "star.fill", "wand.and.stars",
-        "bolt.fill", "flame.fill", "drop.fill",
-        "checkmark.seal.fill", "flag.fill", "target"
+    struct Symbol: Identifiable {
+        let name: String
+        let title: String
+        var id: String { name }
+    }
+
+    struct SymbolCategory: Identifiable {
+        let title: String
+        let symbols: [Symbol]
+        var id: String { title }
+    }
+
+    static let symbolCategories = [
+        SymbolCategory(title: "Temáticas escénicas y musicales", symbols: [
+            Symbol(name: "circle.slash", title: "None"),
+            Symbol(name: "theatermasks.fill", title: "Drama"),
+            Symbol(name: "music.note.house.fill", title: "Musical Theater"),
+            Symbol(name: "music.quarternote.3", title: "Chamber"),
+            Symbol(name: "music.mic", title: "Recital"),
+            Symbol(name: "person.wave.2.fill", title: "Opera"),
+            Symbol(name: "metronome", title: "Symphony – Percussive"),
+            Symbol(name: "heart.fill", title: "Symphony – Romantic"),
+            Symbol(name: "person.3.fill", title: "Symphony and chorus"),
+            Symbol(name: "pianokeys", title: "Organ Choral")
+        ]),
+        SymbolCategory(title: "Reproducción y acciones", symbols: [
+            Symbol(name: "sparkles.rectangle.stack", title: "Demo"),
+            Symbol(name: "play.rectangle.fill", title: "Reproducir vídeo"),
+            Symbol(name: "play.circle.fill", title: "Reproducir"),
+            Symbol(name: "play.fill", title: "Play"),
+            Symbol(name: "stop.fill", title: "Stop"),
+            Symbol(name: "playpause.fill", title: "Play / pausa"),
+            Symbol(name: "pause.fill", title: "Pausa"),
+            Symbol(name: "checkmark.circle.fill", title: "Completado"),
+            Symbol(name: "arrow.counterclockwise", title: "Reiniciar"),
+            Symbol(name: "gearshape.2.fill", title: "Configurar"),
+            Symbol(name: "power.circle.fill", title: "Encender"),
+            Symbol(name: "power.circle", title: "Alimentación")
+        ]),
+        SymbolCategory(title: "Escena y espectáculo", symbols: [
+            Symbol(name: "curtains.closed", title: "Telón"),
+            Symbol(name: "film.fill", title: "Cine"),
+            Symbol(name: "video.fill", title: "Vídeo"),
+            Symbol(name: "tv.fill", title: "Pantalla"),
+            Symbol(name: "figure.walk", title: "Entrada"),
+            Symbol(name: "figure.dance", title: "Danza"),
+            Symbol(name: "person.2.fill", title: "Reparto"),
+            Symbol(name: "star.fill", title: "Estrella"),
+            Symbol(name: "wand.and.stars", title: "Efecto")
+        ]),
+        SymbolCategory(title: "Audio", symbols: [
+            Symbol(name: "music.note", title: "Música"),
+            Symbol(name: "music.note.list", title: "Lista musical"),
+            Symbol(name: "speaker.wave.3.fill", title: "Altavoz"),
+            Symbol(name: "waveform", title: "Onda"),
+            Symbol(name: "waveform.path.ecg", title: "Señal"),
+            Symbol(name: "headphones", title: "Auriculares")
+        ]),
+        SymbolCategory(title: "Iluminación y efectos", symbols: [
+            Symbol(name: "lightbulb.fill", title: "Luz"),
+            Symbol(name: "flashlight.on.fill", title: "Foco"),
+            Symbol(name: "sun.max.fill", title: "Brillo"),
+            Symbol(name: "bolt.fill", title: "Electricidad"),
+            Symbol(name: "flame.fill", title: "Fuego"),
+            Symbol(name: "drop.fill", title: "Agua")
+        ]),
+        SymbolCategory(title: "Vídeo, dispositivos y objetos", symbols: [
+            Symbol(name: "iphone", title: "iPhone"),
+            Symbol(name: "ipad", title: "iPad"),
+            Symbol(name: "laptopcomputer", title: "Ordenador"),
+            Symbol(name: "camera.fill", title: "Cámara"),
+            Symbol(name: "viewfinder", title: "Encuadre"),
+            Symbol(name: "arkit", title: "Realidad aumentada"),
+            Symbol(name: "cube.fill", title: "Objeto"),
+            Symbol(name: "shippingbox.fill", title: "Caja"),
+            Symbol(name: "square.3.layers.3d", title: "Capas")
+        ]),
+        SymbolCategory(title: "Red, espacio y estado", symbols: [
+            Symbol(name: "globe", title: "Global"),
+            Symbol(name: "network", title: "Red"),
+            Symbol(name: "dot.radiowaves.left.and.right", title: "Radio"),
+            Symbol(name: "location.fill", title: "Ubicación"),
+            Symbol(name: "map.fill", title: "Mapa"),
+            Symbol(name: "point.3.filled.connected.trianglepath.dotted", title: "Espacio"),
+            Symbol(name: "checkmark.seal.fill", title: "Verificado"),
+            Symbol(name: "flag.fill", title: "Marca"),
+            Symbol(name: "target", title: "Objetivo")
+        ])
     ]
 
     static let colors = [
@@ -364,34 +434,52 @@ private struct DemoSymbolPicker: View {
     @Binding var selection: String
     let tintHex: String
     @State private var isExpanded = false
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 6)
+    private let columns = [GridItem(.adaptive(minimum: 92, maximum: 140), spacing: 8)]
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(DemoAppearanceOptions.symbols, id: \.self) { symbol in
-                    Button {
-                        selection = symbol
-                        isExpanded = false
-                    } label: {
-                        Image(systemName: symbol)
-                            .font(.title3)
-                            .foregroundStyle(selection == symbol ? .white : Color(hex: tintHex))
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .background {
-                                RoundedRectangle(cornerRadius: 9)
-                                    .fill(selection == symbol ? Color(hex: tintHex) : Color.secondary.opacity(0.10))
-                            }
-                            .overlay {
-                                if selection == symbol {
+            ForEach(DemoAppearanceOptions.symbolCategories) { category in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(category.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 8)
+
+                    LazyVGrid(columns: columns, spacing: 8) {
+                        ForEach(category.symbols) { symbol in
+                            Button {
+                                selection = symbol.name
+                                isExpanded = false
+                            } label: {
+                                VStack(spacing: 5) {
+                                    Image(systemName: symbol.name)
+                                        .font(.title3)
+                                        .frame(height: 24)
+                                    Text(symbol.title)
+                                        .font(.caption2)
+                                        .lineLimit(2)
+                                        .minimumScaleFactor(0.75)
+                                        .multilineTextAlignment(.center)
+                                }
+                                .foregroundStyle(selection == symbol.name ? .white : Color(hex: tintHex))
+                                .frame(maxWidth: .infinity, minHeight: 58)
+                                .padding(.horizontal, 4)
+                                .background {
                                     RoundedRectangle(cornerRadius: 9)
-                                        .stroke(.primary.opacity(0.25), lineWidth: 2)
+                                        .fill(selection == symbol.name ? Color(hex: tintHex) : Color.secondary.opacity(0.10))
+                                }
+                                .overlay {
+                                    if selection == symbol.name {
+                                        RoundedRectangle(cornerRadius: 9)
+                                            .stroke(.primary.opacity(0.25), lineWidth: 2)
+                                    }
                                 }
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(symbol.title)
+                            .accessibilityValue(selection == symbol.name ? "Seleccionado" : "")
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Icono \(symbol)")
-                    .accessibilityValue(selection == symbol ? "Seleccionado" : "")
                 }
             }
             .padding(.top, 12)

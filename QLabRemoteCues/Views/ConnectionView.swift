@@ -51,14 +51,38 @@ struct ConnectionView: View {
             Section {
                 Button("Guardar") { model.save(profile: draft, passcode: passcode) }
                     .disabled(!draft.isValid)
-                Button(qlab.state == .connected ? "Desconectar" : "Probar y conectar") {
-                    model.save(profile: draft, passcode: passcode)
-                    Task { qlab.state == .connected ? await qlab.disconnect() : await model.connect() }
-                }
-                .disabled(!draft.isValid)
             }
         }
         .navigationTitle("Conexión")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    if qlab.state == .connected {
+                        Task { await qlab.disconnect() }
+                    } else {
+                        model.save(profile: draft, passcode: passcode)
+                        Task { await model.connect() }
+                    }
+                } label: {
+                    Label(
+                        qlab.state == .connected ? "Desconectar" : "Probar y conectar",
+                        systemImage: qlab.state == .connected ? "network.slash" : "network"
+                    )
+                    .font(.headline)
+                    .padding(.horizontal, 8)
+                    .frame(minHeight: 44)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(qlab.state == .connected ? .red : .accentColor)
+                .disabled(qlab.state != .connected && !draft.isValid)
+                .accessibilityHint(
+                    qlab.state == .connected
+                        ? "Cierra la conexión actual con QLab"
+                        : "Guarda el perfil y prueba la conexión con QLab"
+                )
+            }
+        }
         .onAppear { rebindAndLoad() }
     }
 

@@ -134,4 +134,7 @@ struct AppConfigurationPackage: Codable, Sendable {
     var constellationButtons: [DemoLiveControl]?
     var powerOnCommand: String?
     var powerOffCommand: String?
+    var checkSpeakersCommand: String?
+    var stopCheckSpeakersCommand: String?
+    var resetAVBCommand: String?
 }

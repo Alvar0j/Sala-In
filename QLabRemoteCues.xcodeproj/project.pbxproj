@@ -20,6 +20,7 @@
 		5FDC99069B6B45D971BDC1FF /* OSCCodecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513ABC7BAFCD308585C304E4 /* OSCCodecTests.swift */; };
 		60EC0D3AA41376CFC782958D /* QLabRemoteCuesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D99E53BB7AAAE7D293AB70 /* QLabRemoteCuesUITests.swift */; };
 		612A4B40CB317A063993C658 /* ConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAFA5F8796ED252CCBB4AD95 /* ConnectionView.swift */; };
+		A49C23DE6B8F4D6C91000001 /* CheckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49C23DE6B8F4D6C91000002 /* CheckView.swift */; };
 		6B73AE6387F9E699EDBE195B /* ShowModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506EA0EE23FDDA8A6AF36FEB /* ShowModeView.swift */; };
 		85215801EE64DE5EE2F4083F /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E16C847E8DA77B747610040 /* Persistence.swift */; };
 		869985B348BA2CFC42D3FFFA /* QLabService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5196275C79E38C30630BC72 /* QLabService.swift */; };
@@ -84,6 +85,7 @@
 		DEBFA3F033D8F37D46161078 /* QLabServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QLabServiceTests.swift; sourceTree = "<group>"; };
 		E5196275C79E38C30630BC72 /* QLabService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QLabService.swift; sourceTree = "<group>"; };
 		EAFA5F8796ED252CCBB4AD95 /* ConnectionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectionView.swift; sourceTree = "<group>"; };
+		A49C23DE6B8F4D6C91000002 /* CheckView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckView.swift; sourceTree = "<group>"; };
 		F1E13FE03C20F084CB66EACF /* QLabRemoteCues.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QLabRemoteCues.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FF9C7251999531D499502586 /* RootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -190,6 +192,7 @@
 			children = (
 				CEA6B45AB4459B88BEC8DC44 /* ActivityLogView.swift */,
 				EAFA5F8796ED252CCBB4AD95 /* ConnectionView.swift */,
+				A49C23DE6B8F4D6C91000002 /* CheckView.swift */,
 				323D88FCF6514AF1389487C8 /* ConstellationView.swift */,
 				4E185E52D47BEB4199994698 /* ControlView.swift */,
 				2A78122BA00AAE099BC7C572 /* CueListView.swift */,
@@ -406,6 +409,7 @@
 				061A86C65F4DAA22C72772A6 /* AppViewModel.swift in Sources */,
 				A70438836F8DB133591E8A80 /* ActivityLogView.swift in Sources */,
 				612A4B40CB317A063993C658 /* ConnectionView.swift in Sources */,
+				A49C23DE6B8F4D6C91000001 /* CheckView.swift in Sources */,
 				A1D172E0694901A1ECE30394 /* ConstellationView.swift in Sources */,
 				F425CD69DCEF577520F6476F /* ControlView.swift in Sources */,
 				3CBAB1E728263CBB5F595276 /* CueListView.swift in Sources */,
