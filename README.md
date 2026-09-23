@@ -12,6 +12,10 @@ Aplicación nativa iOS/iPadOS para controlar QLab 5 mediante OSC sobre UDP.
 
 No se usan dependencias de terceros. El passcode se guarda en Keychain y las configuraciones permanecen en el dispositivo.
 
+## Versión web
+
+La carpeta [`web/`](web/README.md) contiene un servidor para el Mac de la sala: cualquier usuario conectado a la Wi‑Fi lanza y edita las demos desde el navegador, sin conectarse a QLab, y además controla timelines de WATCHOUT 7. Instrucciones en [`web/README.md`](web/README.md).
+
 ## Flujo de demos
 
 La pestaña **Demos** permite preparar una experiencia completa sin que el operador tenga que conocer OSC:

@@ -4,3 +4,7 @@
 .swiftpm-cache/
 .build/
 xcuserdata/
+
+# Web
+web/data/
+node_modules/
