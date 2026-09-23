@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 
 export const newID = () => randomUUID().toUpperCase();
 
-export const STEP_KINDS = ['osc', 'wait', 'confirmation', 'instruction', 'watchoutPlay', 'watchoutPause', 'watchoutStop'];
+export const STEP_KINDS = ['osc', 'wait', 'confirmation', 'instruction', 'watchoutPlay', 'watchoutPause', 'watchoutStop', 'presentationStart', 'presentationStop'];
 export const CONTROL_KINDS = ['osc', 'watchoutPlay', 'watchoutPause', 'watchoutStop'];
 export const PHASES = ['preparation', 'launch', 'finish'];
 

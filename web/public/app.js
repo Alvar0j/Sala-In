@@ -95,7 +95,8 @@ const STATE_LABELS = {
 };
 const STEP_KINDS = {
   osc: 'Comando OSC (QLab)', watchoutPlay: 'WATCHOUT: reproducir timeline', watchoutPause: 'WATCHOUT: pausar timeline',
-  watchoutStop: 'WATCHOUT: parar timeline', wait: 'Espera', confirmation: 'Confirmación', instruction: 'Instrucción',
+  watchoutStop: 'WATCHOUT: parar timeline', presentationStart: 'Presentación: abrir y empezar', presentationStop: 'Presentación: cerrar',
+  wait: 'Espera', confirmation: 'Confirmación', instruction: 'Instrucción',
 };
 const CONTROL_KINDS = { osc: 'Comando OSC (QLab)', watchoutPlay: 'WATCHOUT: reproducir', watchoutPause: 'WATCHOUT: pausar', watchoutStop: 'WATCHOUT: parar' };
 const PHASES = { preparation: 'Preparación', launch: 'Lanzamiento', finish: 'Finalización' };
@@ -107,7 +108,7 @@ const ROLE_LABELS = { operador: 'Operador (lanza demos)', editor: 'Editor (crea 
 const RANK = { operador: 0, editor: 1, admin: 2 };
 
 // --- estado ---------------------------------------------------------------------
-const store = { user: null, needsSetup: false, config: null, state: null, log: [], settings: null, timelines: [], ready: false };
+const store = { user: null, needsSetup: false, config: null, state: null, log: [], settings: null, timelines: [], files: [], ready: false };
 let events = null;
 const can = (role) => store.user && RANK[store.user.role] >= RANK[role];
 const demoById = (id) => store.config?.demos.find((d) => d.id === id);
@@ -125,7 +126,7 @@ async function boot() {
 
 async function loadAll() {
   const data = await api('GET', '/api/bootstrap');
-  Object.assign(store, { user: data.user, config: data.config, state: data.state, log: data.log, settings: data.settings ?? null });
+  Object.assign(store, { user: data.user, config: data.config, state: data.state, log: data.log, settings: data.settings ?? null, files: data.files ?? [] });
   store.timelines = data.state.watchout.timelines ?? [];
   connectEvents();
 }
@@ -139,6 +140,7 @@ function connectEvents() {
     refresh();
   });
   events.addEventListener('config', (e) => { store.config = JSON.parse(e.data); refresh(true); });
+  events.addEventListener('files', (e) => { store.files = JSON.parse(e.data); if (['files', 'demos'].includes(currentView().name)) refresh(); });
   events.addEventListener('log', (e) => { store.log.unshift(JSON.parse(e.data)); store.log.length = Math.min(store.log.length, 300); if (currentView().name === 'log') refresh(); });
   events.onerror = () => { if (!store.user) events.close(); };
 }
@@ -148,7 +150,7 @@ function currentView() {
   const [name, id, sub] = location.hash.replace(/^#\/?/, '').split('/');
   return { name: name || 'demos', id, sub };
 }
-window.addEventListener('hashchange', () => { draft = null; render(); });
+window.addEventListener('hashchange', () => { draft = null; render(); window.scrollTo(0, 0); });
 
 let draft = null; // copia de trabajo del editor abierto (no se pisa con los eventos en tiempo real)
 
@@ -200,6 +202,7 @@ function viewContent() {
     case 'check': return checkView();
     case 'log': return logView();
     case 'settings': return can('admin') ? settingsView() : notAllowed();
+    case 'files': return can('editor') ? filesView() : notAllowed();
     default: return demosView();
   }
 }
@@ -249,9 +252,169 @@ function activeBanner() {
     runner.currentStep ? h('p', { class: 'small muted' }, [PHASES[runner.currentStep.phase], runner.currentStep.title].filter(Boolean).join(' · ')) : null,
     countdown ? [h('p', { class: 'small' }, `Preparando la sala · ${countdown.remaining} s`),
       h('div', { class: 'progress' }, h('div', { style: { width: `${((countdown.total - countdown.remaining + 1) / countdown.total) * 100}%` } }))] : null,
+    presentationPlaying() && currentView().id !== demo.id ? slideRemote(true) : null,
     h('div', { class: 'row' },
       busy ? h('button', { class: 'small', onclick: () => run(() => api('POST', '/api/runner/cancel'), 'Tarea detenida') }, 'Detener') : null,
       h('button', { class: 'small danger', disabled: st === 'finishing', onclick: () => finishDemo(demo) }, 'Finalizar demo')));
+}
+
+// --- presentaciones ----------------------------------------------------------------
+const presentation = () => store.state?.presentation ?? { status: 'idle' };
+const presentationPlaying = () => presentation().status === 'playing';
+const hasPresentation = (demo) => ['preparation', 'launch', 'finish'].some((p) => demo[p].some((s) => s.kind === 'presentationStart'));
+const slideAction = (action, body) => run(() => api('POST', `/api/presentation/${action}`, body));
+
+/** Mando de diapositivas. `compact` para el banner. */
+function slideRemote(compact = false) {
+  const p = presentation();
+  const counter = p.total ? `${p.slide} / ${p.total}` : `${p.slide || '–'}`;
+  if (compact) {
+    return h('div', { class: 'mini-remote' },
+      h('span', { class: 'small' }, `🖥️ Diapositiva ${counter}`),
+      h('button', { class: 'small', onclick: () => slideAction('previous') }, '◀'),
+      h('button', { class: 'small primary', onclick: () => slideAction('next') }, 'Siguiente ▶'));
+  }
+  const gotoInput = h('input', { type: 'number', min: 1, max: p.total || undefined, placeholder: 'Nº', style: { width: '90px' } });
+  return h('div', { class: 'card slides' },
+    h('div', { class: 'section-head' }, h('h2', {}, '🖥️ Presentación'), h('span', { class: 'badge running' }, p.driver === 'simulado' ? 'Simulada' : 'Keynote')),
+    h('p', { class: 'muted small' }, p.fileName),
+    h('div', { class: 'slide-counter' }, h('span', {}, 'Diapositiva'), h('strong', {}, counter)),
+    h('div', { class: 'slide-buttons' },
+      h('button', { class: 'big-button', style: { '--tint': 'var(--surface-2)' }, onclick: () => slideAction('previous') }, h('span', { class: 'glyph' }, '◀'), 'Anterior'),
+      h('button', { class: 'big-button', onclick: () => slideAction('next') }, h('span', { class: 'glyph' }, '▶'), 'Siguiente')),
+    h('p', { class: 'small muted' }, '«Siguiente» también avanza las animaciones de la diapositiva. En un ordenador puedes usar las flechas del teclado o la barra espaciadora.'),
+    h('div', { class: 'row' },
+      gotoInput, h('button', { class: 'small', onclick: () => gotoInput.value && slideAction('goto', { slide: Number(gotoInput.value) }) }, 'Ir a la diapositiva'),
+      h('span', { class: 'spacer' }),
+      h('button', { class: 'small ghost', onclick: async () => { if (await confirmDialog('¿Detener la presentación?', 'Se cerrará Keynote. La demo sigue activa hasta que la finalices.', { ok: 'Detener', danger: true })) slideAction('stop'); } }, 'Detener presentación')));
+}
+
+function presentationStatusCard(demo) {
+  const p = presentation();
+  const mine = p.demoId === demo.id;
+  if (mine && p.status === 'playing') return slideRemote();
+  let text = 'La presentación se abrirá al lanzar la demo.';
+  if (mine && p.status === 'opening') text = `Abriendo «${p.fileName}» en Keynote…`;
+  else if (mine && p.status === 'error') text = `⚠️ ${p.detail}`;
+  else if (mine && p.status === 'stopped') text = `⚠️ ${p.detail} Relanza la demo para volver a abrirla.`;
+  else if (p.status === 'playing') text = `Ahora se está reproduciendo otra presentación («${p.fileName}»).`;
+  return h('div', { class: 'card' }, h('h2', {}, '🖥️ Presentación'), h('p', { class: 'small muted' }, text));
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!presentationPlaying() || currentView().name !== 'demo' || document.getElementById('modal-root').childElementCount) return;
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+  if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); slideAction('next'); }
+  if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); slideAction('previous'); }
+});
+
+function formatSize(bytes) {
+  if (bytes > 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
+  if (bytes > 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+/** Sube un archivo mostrando el progreso (XHR permite medir la subida; fetch no). */
+function uploadFile(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/api/files?name=${encodeURIComponent(file.name)}`);
+    xhr.setRequestHeader('X-Salain-Upload', '1');
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+    xhr.onload = () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText); } catch {}
+      if (xhr.status >= 200 && xhr.status < 300) resolve(data.file);
+      else reject(new Error(data.error ?? `Error ${xhr.status}`));
+    };
+    xhr.onerror = () => reject(new Error('Se perdió la conexión durante la subida.'));
+    xhr.send(file);
+  });
+}
+
+const ACCEPT = '.key,.pptx,.ppt,.zip';
+const FILE_HELP = 'Keynote (.key) o PowerPoint (.pptx). Si el .key no se deja elegir, en Keynote usa Archivo → Avanzado → Cambiar tipo de archivo → Archivo único, o comprímelo en .zip.';
+
+function uploadPicker(onUploaded) {
+  const bar = h('div', { style: { width: '0%' } });
+  const status = h('p', { class: 'small muted' }, FILE_HELP);
+  const progress = h('div', { class: 'progress hidden' }, bar);
+  const input = h('input', { type: 'file', accept: ACCEPT, class: 'hidden', onchange: async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    button.disabled = true;
+    progress.classList.remove('hidden');
+    status.textContent = `Subiendo «${file.name}» (${formatSize(file.size)})…`;
+    try {
+      const uploaded = await uploadFile(file, (ratio) => { bar.style.width = `${Math.round(ratio * 100)}%`; status.textContent = `Subiendo «${file.name}» · ${Math.round(ratio * 100)} %`; });
+      status.textContent = `✓ «${uploaded.name}» subido.`;
+      onUploaded(uploaded);
+    } catch (error) {
+      status.textContent = `⚠️ ${error.message}`;
+      toast(error.message, 'error');
+    } finally {
+      button.disabled = false;
+      e.target.value = '';
+    }
+  } });
+  const button = h('button', { class: 'primary', onclick: () => input.click() }, '⬆︎ Elegir archivo…');
+  return h('div', { style: { display: 'grid', gap: '8px' } }, h('div', { class: 'row' }, button, input), progress, status);
+}
+
+async function newPresentation() {
+  const values = { name: '', fileId: '' };
+  const timeline = store.settings?.presentation?.watchoutTimelineId;
+  const created = await modal((close) => {
+    const fileList = h('div', {});
+    const renderFiles = () => fileList.replaceChildren(
+      field('Presentación', h('select', { onchange: (e) => { values.fileId = e.target.value; } },
+        h('option', { value: '' }, store.files.length ? 'Elige una ya subida…' : 'Sube un archivo primero'),
+        store.files.map((f) => h('option', { value: f.id, selected: f.id === values.fileId }, `${f.name} · ${formatSize(f.size)}`)))));
+    renderFiles();
+    const nameInput = input(values, 'name', 'text', 'Nombre de la demo (por defecto, el del archivo)');
+    return [
+      h('h2', {}, 'Nueva presentación'),
+      h('p', { class: 'small muted' }, 'Crea una demo que abre la presentación en Keynote y la muestra en las paredes. Luego puedes editarla como cualquier otra demo.'),
+      uploadPicker((file) => { store.files = [file, ...store.files.filter((f) => f.id !== file.id)]; values.fileId = file.id; if (!values.name) { values.name = file.name.replace(/\.[^.]+$/, ''); nameInput.value = values.name; } renderFiles(); }),
+      fileList,
+      field('Nombre', nameInput),
+      timeline || !can('admin') ? null : h('p', { class: 'small muted' }, 'ℹ️ Aún no has elegido el timeline de WATCHOUT para presentaciones (Ajustes → Presentaciones). La demo solo abrirá Keynote.'),
+      h('div', { class: 'actions' }, h('button', { onclick: () => close(null) }, 'Cancelar'),
+        h('button', { class: 'primary', onclick: async () => {
+          if (!values.fileId) return toast('Elige o sube una presentación.', 'error');
+          const result = await run(() => api('POST', '/api/presentations', values), 'Presentación creada');
+          if (result) close(result.demo);
+        } }, 'Crear')),
+    ];
+  });
+  if (created) location.hash = `#/demo/${created.id}`;
+}
+
+function fileSelect(obj, key) {
+  const current = String(obj[key] ?? '');
+  const options = store.files.map((f) => h('option', { value: f.id, selected: f.id === current }, f.name));
+  if (current && !store.files.some((f) => f.id === current)) options.unshift(h('option', { value: current, selected: true }, 'Archivo borrado: elige otro'));
+  if (!current) options.unshift(h('option', { value: '', selected: true }, store.files.length ? 'Elige una presentación…' : 'No hay archivos subidos'));
+  return h('select', { onchange: (e) => { obj[key] = e.target.value; } }, options);
+}
+
+function filesView() {
+  const usage = (id) => store.config.demos.filter((d) => ['preparation', 'launch', 'finish'].some((p) => d[p].some((s) => s.kind === 'presentationStart' && s.value === id))).map((d) => d.name);
+  return h('section', {},
+    h('div', { class: 'row' }, h('a', { class: 'button small ghost', href: '#/demos' }, '‹ Demos')),
+    h('h1', {}, 'Archivos'),
+    h('div', { class: 'card' }, h('h2', {}, 'Subir presentación'), uploadPicker(() => {})),
+    store.files.length ? h('div', { class: 'card' }, h('table', {}, h('tbody', {}, store.files.map((f) => {
+      const used = usage(f.id);
+      return h('tr', {},
+        h('td', {}, h('strong', {}, f.name), h('div', { class: 'small muted' }, `${formatSize(f.size)} · ${new Date(f.uploadedAt).toLocaleDateString('es-ES')} · ${f.by}`),
+          used.length ? h('div', { class: 'small muted' }, `Usado en: ${used.join(', ')}`) : null),
+        h('td', { style: { textAlign: 'right' } }, h('button', { class: 'small ghost', onclick: async () => {
+          if (!await confirmDialog(`¿Borrar «${f.name}»?`, used.length ? `Lo usan estas demos: ${used.join(', ')}. Dejarán de poder abrirlo.` : 'No se puede deshacer.', { ok: 'Borrar', danger: true })) return;
+          run(() => api('DELETE', `/api/files/${f.id}`), 'Archivo borrado');
+        } }, '✕')));
+    })))) : h('div', { class: 'empty' }, 'No hay archivos subidos.'));
 }
 
 function badgeClass(state) {
@@ -332,7 +495,10 @@ function demosView() {
   return h('section', {},
     h('img', { class: 'logo', src: 'img/spacemap.png', alt: 'Spacemap Go' }),
     h('div', { class: 'grid' }, power('powerOnCommand', 'Encender sala', '⏻', 'var(--ok)'), power('powerOffCommand', 'Apagar sala', '⭘', 'var(--danger)')),
-    h('div', { class: 'section-head' }, h('h2', {}, 'Demos'), can('editor') ? h('a', { class: 'button small', href: '#/new' }, '＋ Nueva demo') : null),
+    h('div', { class: 'section-head' }, h('h2', {}, 'Demos'), can('editor') ? h('div', { class: 'row' },
+      h('a', { class: 'button small ghost', href: '#/files', title: 'Archivos subidos' }, '📁'),
+      h('button', { class: 'small', onclick: newPresentation }, '＋ Presentación'),
+      h('a', { class: 'button small', href: '#/new' }, '＋ Demo')) : null),
     demos.length ? h('div', { class: 'grid wide' }, demos.map(demoCard))
       : h('div', { class: 'empty' }, can('editor') ? 'Aún no hay demos. Crea una o importa la configuración de la app iPad en Ajustes.' : 'Aún no hay demos.'));
 }
@@ -386,11 +552,13 @@ function demoDetailView(id) {
         h('button', { class: 'primary', disabled: busy && isActive && st !== 'running', onclick: () => launchDemo(demo) }, isActive ? '↻ Relanzar' : '▶ Lanzar demo'),
         isActive || busy ? h('button', { class: 'danger', disabled: st === 'finishing', onclick: () => finishDemo(demo) }, '■ Finalizar') : null),
       !qlabReady() ? h('p', { class: 'small muted' }, '⚠️ QLab no está conectado: los comandos OSC fallarán.') : null),
-    h('div', { class: 'section-head' }, h('h2', {}, 'Mando de la demo'),
-      !running && demo.liveControls.length ? h('span', { class: 'small muted' }, 'Disponible cuando la demo esté en curso') : null),
-    demo.liveControls.length
-      ? h('div', { class: 'grid' }, demo.liveControls.map((control) => controlButton(control, !running, `/api/demos/${demo.id}/controls/${control.id}`)))
-      : h('div', { class: 'empty' }, 'Esta demo no tiene botones de mando.'));
+    hasPresentation(demo) ? presentationStatusCard(demo) : null,
+    hasPresentation(demo) && !demo.liveControls.length ? null : [
+      h('div', { class: 'section-head' }, h('h2', {}, 'Mando de la demo'),
+        !running && demo.liveControls.length ? h('span', { class: 'small muted' }, 'Disponible cuando la demo esté en curso') : null),
+      demo.liveControls.length
+        ? h('div', { class: 'grid' }, demo.liveControls.map((control) => controlButton(control, !running, `/api/demos/${demo.id}/controls/${control.id}`)))
+        : h('div', { class: 'empty' }, 'Esta demo no tiene botones de mando.')]);
 }
 
 function controlButton(control, disabled, endpoint) {
@@ -500,8 +668,10 @@ function stepEditor(step, index, steps, rerender) {
   if (step.kind === 'osc') valueField = field('Comando OSC (puede llevar argumentos: /cue/1/level 0 -10)', input(step, 'value', 'text', '/cue/5/start'));
   else if (step.kind.startsWith('watchout')) valueField = field('Timeline de WATCHOUT', timelineSelect(step, 'value'));
   else if (step.kind === 'wait') valueField = field('Segundos', input(step, 'delaySeconds', 'number'));
+  else if (step.kind === 'presentationStart') valueField = field('Presentación (sube archivos en Demos → ＋ Presentación o en Archivos)', fileSelect(step, 'value'));
+  else if (step.kind === 'presentationStop') valueField = h('p', { class: 'small muted' }, 'Detiene la presentación y cierra Keynote.');
   else valueField = field(step.kind === 'confirmation' ? 'Pregunta que verá el operador' : 'Instrucción que verá el operador', textarea(step, 'value'));
-  const testable = !['wait', 'confirmation', 'instruction'].includes(step.kind);
+  const testable = !['wait', 'confirmation', 'instruction', 'presentationStart', 'presentationStop'].includes(step.kind);
   return h('div', { class: `step ${step.isEnabled ? '' : 'disabled'}` },
     h('div', { class: 'step-head' }, h('strong', { class: 'muted' }, `${index + 1}.`), kindSelect, input(step, 'title', 'text', 'Título'), listTools(steps, index, rerender)),
     valueField,
@@ -685,6 +855,7 @@ function settingsView() {
       w.timelines?.length ? h('details', {}, h('summary', { class: 'small' }, `${w.timelines.length} timelines detectados`),
         h('table', {}, h('tbody', {}, w.timelines.map((t) => h('tr', {}, h('td', { class: 'mono' }, t.id), h('td', {}, t.name)))))) : null,
       h('div', { class: 'row end' }, h('button', { class: 'primary small', onclick: saveWatchout }, 'Guardar WATCHOUT'))),
+    presentationSettingsCard(d),
     usersCard(d),
     importExportCard());
 }
@@ -693,6 +864,24 @@ function statusLine(snapshot, id) {
   const cls = snapshot.status === 'connected' ? 'ok' : snapshot.status === 'connecting' ? 'warn' : 'bad';
   return h('p', { class: 'small', id }, h('span', { class: `dot ${cls}`, style: { display: 'inline-block', marginRight: '6px' } }),
     snapshot.status === 'connected' ? `Conectado${snapshot.version ? ` · versión ${snapshot.version}` : ''}` : snapshot.detail || snapshot.status);
+}
+
+function presentationSettingsCard(d) {
+  d.presentation ??= { ...(store.settings?.presentation ?? { driver: 'simulado', watchoutTimelineId: '' }) };
+  const save = async () => {
+    const result = await run(() => api('PUT', '/api/settings', { presentation: d.presentation }), 'Ajustes de presentaciones guardados');
+    if (result) store.settings = result;
+  };
+  return h('div', { class: 'card' },
+    h('h2', {}, '🖥️ Presentaciones'),
+    h('p', { class: 'small muted' }, 'Keynote se abre a pantalla completa en este Mac; NDI Scan Converter lo envía a WATCHOUT, donde la fuente NDI está colocada en las 4 paredes dentro de un timeline propio.'),
+    h('div', { class: 'form-grid' },
+      field('Reproductor', h('select', { onchange: (e) => { d.presentation.driver = e.target.value; } },
+        h('option', { value: 'keynote', selected: d.presentation.driver === 'keynote' }, 'Keynote en este Mac'),
+        h('option', { value: 'simulado', selected: d.presentation.driver === 'simulado' }, 'Simulado (para pruebas)'))),
+      field('Timeline de WATCHOUT con la fuente NDI', timelineSelect(d.presentation, 'watchoutTimelineId'))),
+    h('p', { class: 'small muted' }, 'Las presentaciones nuevas usarán este timeline: se reproduce al lanzar y se para al finalizar.'),
+    h('div', { class: 'row end' }, h('button', { class: 'primary small', onclick: save }, 'Guardar presentaciones')));
 }
 
 function rerenderSettings() {

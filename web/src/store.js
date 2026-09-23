@@ -7,6 +7,7 @@ import { emptyConfig, normalizeConfig } from './model.js';
 export const DEFAULT_SETTINGS = {
   qlab: { host: '', port: 53000, workspace: '', replyPort: 53001, passcode: '' },
   watchout: { host: '', port: 3019 },
+  presentation: { driver: process.platform === 'darwin' ? 'keynote' : 'simulado', watchoutTimelineId: '' },
 };
 
 export class Store {
@@ -18,6 +19,7 @@ export class Store {
     this.settings = {
       qlab: { ...DEFAULT_SETTINGS.qlab, ...settings.qlab },
       watchout: { ...DEFAULT_SETTINGS.watchout, ...settings.watchout },
+      presentation: { ...DEFAULT_SETTINGS.presentation, ...settings.presentation },
     };
     this.users = this.read('users.json', []);
     this.secret = this.loadSecret();

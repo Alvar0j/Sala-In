@@ -10,10 +10,12 @@ export class DemoRunner extends EventEmitter {
   /**
    * @param {{qlab: any, watchout: any, log: Function, getDemo: (id: string) => any}} deps
    */
-  constructor({ qlab, watchout, log, getDemo }) {
+  constructor({ qlab, watchout, presenter = null, getFile = () => null, log, getDemo }) {
     super();
     this.qlab = qlab;
     this.watchout = watchout;
+    this.presenter = presenter;
+    this.getFile = getFile;
     this.log = log;
     this.getDemo = getDemo;
     this.states = {};          // demoId -> {state, error, by}
@@ -208,6 +210,13 @@ export class DemoRunner extends EventEmitter {
       case 'watchoutPlay': return this.watchout.play(step.value);
       case 'watchoutPause': return this.watchout.pause(step.value);
       case 'watchoutStop': return this.watchout.stopTimeline(step.value);
+      case 'presentationStart': {
+        const file = this.getFile(step.value);
+        if (!file) throw new Error('La presentación ya no existe. Súbela de nuevo y edita la demo.');
+        if (!this.presenter) throw new Error('El reproductor de presentaciones no está disponible.');
+        return this.presenter.open(file, demo?.id ?? null);
+      }
+      case 'presentationStop': return this.presenter?.stop();
       default: throw new Error(`Tipo de paso desconocido: ${step.kind}`);
     }
   }

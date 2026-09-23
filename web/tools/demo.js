@@ -28,13 +28,26 @@ function seed() {
   write('settings.json', {
     qlab: { host: '127.0.0.1', port: QLAB_PORT, workspace: 'Sala', replyPort: QLAB_PORT - 1, passcode: '' },
     watchout: { host: '127.0.0.1', port: WATCHOUT_PORT },
+    presentation: { driver: 'simulado', watchoutTimelineId: '30' },
   });
+  // Presentación de ejemplo (un archivo vacío: el reproductor simulado no lo abre de verdad).
+  const fileId = 'DEMO-FILE-1';
+  fs.mkdirSync(path.join(dataDir, 'files', fileId), { recursive: true });
+  const filePath = path.join(dataDir, 'files', fileId, 'Presentación RMS.key');
+  fs.writeFileSync(filePath, '');
+  write('files.json', [{ id: fileId, name: 'Presentación RMS.key', size: 48_300_000, uploadedAt: new Date().toISOString(), by: 'admin', kind: 'keynote', path: filePath, playPath: filePath }]);
   write('users.json', [
     { id: 'DEMO-ADMIN', username: 'admin', role: 'admin', password: hashPassword('demo1234'), version: 1 },
     { id: 'DEMO-OPER', username: 'sala', role: 'operador', password: hashPassword('demo1234'), version: 1 },
   ]);
   write('config.json', normalizeConfig({
     demos: [
+      {
+        name: 'Presentación RMS', summary: 'Keynote en las 4 paredes con suelo blanco.', symbol: 'rectangle.on.rectangle', colorHex: '#F0A020',
+        estimatedMinutes: 15, requiresLaunchConfirmation: false,
+        launch: [{ kind: 'presentationStart', title: 'Abrir presentación', value: 'DEMO-FILE-1' }, wo('watchoutPlay', 'Mostrar en las paredes', '30')],
+        finish: [wo('watchoutStop', 'Quitar de las paredes', '30'), { kind: 'presentationStop', title: 'Cerrar presentación' }],
+      },
       {
         name: 'Cine ASTRYA', summary: 'Tráiler inmersivo en las 4 paredes con sonido Atmos.', symbol: 'film', colorHex: '#8E5CF7',
         estimatedMinutes: 4, roomConfigurationCommand: '/cue/conf-cine/start', configurationSeconds: 5,

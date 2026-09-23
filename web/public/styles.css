@@ -44,7 +44,7 @@ p { margin: 0; }
 .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--danger); }
 main { max-width: 980px; margin: 0 auto; padding: 16px; display: grid; gap: 18px; }
 section { display: grid; gap: var(--gap); }
-.section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 
 .tabs {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; display: flex; justify-content: center;
@@ -99,6 +99,14 @@ button.icon { min-width: 38px; padding: 6px; min-height: 36px; }
 .banner.busy { border-color: rgba(240,160,32,.6); background: linear-gradient(90deg, rgba(240,160,32,.18), rgba(52,120,246,.12)); }
 .progress { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
 .progress > div { height: 100%; background: var(--warn); transition: width .9s linear; }
+
+/* Mando de diapositivas */
+.mini-remote { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+.slides { border-color: rgba(52, 120, 246, .6); }
+.slide-counter { display: flex; align-items: baseline; justify-content: center; gap: 10px; color: var(--muted); }
+.slide-counter strong { font-size: 2.6rem; color: var(--text); font-variant-numeric: tabular-nums; }
+.slide-buttons { display: grid; grid-template-columns: 1fr 2fr; gap: var(--gap); }
+.slide-buttons .big-button { min-height: 130px; font-size: 1.2rem; }
 
 /* Formularios */
 label.field { display: grid; gap: 5px; font-size: .85rem; color: var(--muted); }

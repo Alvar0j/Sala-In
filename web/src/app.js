@@ -8,6 +8,8 @@ import { Auth, COOKIE, hasRole, ROLES } from './auth.js';
 import { QLabClient } from './qlab.js';
 import { WatchoutClient } from './watchout.js';
 import { DemoRunner } from './runner.js';
+import { Presenter } from './presenter.js';
+import { FileStore } from './files.js';
 import {
   normalizeDemo, normalizeControl, normalizeCommands, normalizeStep, exportPackage, importPackage, newID, COMMAND_NAMES,
 } from './model.js';
@@ -23,8 +25,9 @@ class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 
-export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverride, loginDelayMs = 400 } = {}) {
+export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverride, presenter: presenterOverride, loginDelayMs = 400 } = {}) {
   const store = new Store(dataDir);
+  const files = new FileStore(dataDir);
   const auth = new Auth(store);
   const activity = [];
   const clients = new Set();
@@ -39,10 +42,16 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
   const watchout = watchoutOverride ?? new WatchoutClient({ log });
   qlab.log = qlab.log ?? log;
   watchout.log = watchout.log ?? log;
-  const runner = new DemoRunner({ qlab, watchout, log, getDemo: (id) => store.config.demos.find((d) => d.id === id) });
+  const presenter = presenterOverride ?? new Presenter({ log });
+  presenter.log = presenter.log ?? log;
+  const runner = new DemoRunner({
+    qlab, watchout, presenter, log,
+    getDemo: (id) => store.config.demos.find((d) => d.id === id),
+    getFile: (id) => files.get(id),
+  });
 
   // --- tiempo real -------------------------------------------------------------
-  const state = () => ({ qlab: qlab.snapshot(), watchout: watchout.snapshot(), runner: runner.snapshot() });
+  const state = () => ({ qlab: qlab.snapshot(), watchout: watchout.snapshot(), runner: runner.snapshot(), presentation: presenter.snapshot() });
   let pending = null;
   const scheduleState = () => {
     if (pending) return;
@@ -53,6 +62,8 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
     for (const client of clients) client.write(frame);
   }
   qlab.on('change', scheduleState);
+  presenter.on('change', scheduleState);
+  const filesChanged = () => broadcast('files', files.list());
   watchout.on('change', scheduleState);
   runner.on('change', scheduleState);
   const configChanged = () => broadcast('config', publicConfig());
@@ -62,17 +73,19 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
   const publicSettings = () => ({
     qlab: { ...store.settings.qlab, passcode: undefined, hasPasscode: Boolean(store.settings.qlab.passcode) },
     watchout: store.settings.watchout,
+    presentation: store.settings.presentation,
   });
 
+  presenter.configure(store.settings.presentation);
   qlab.configure(store.settings.qlab);
   watchout.configure(store.settings.watchout);
 
   // --- rutas -------------------------------------------------------------------
   const routes = [];
-  const route = (method, pattern, role, handler) => {
+  const route = (method, pattern, role, handler, options = {}) => {
     const keys = [];
     const regex = new RegExp('^' + pattern.replace(/:(\w+)/g, (_, k) => { keys.push(k); return '([^/]+)'; }) + '$');
-    routes.push({ method, regex, keys, role, handler });
+    routes.push({ method, regex, keys, role, handler, ...options });
   };
 
   route('GET', '/api/session', null, ({ user }) => ({ user: auth.publicUser(user), needsSetup: auth.needsSetup() }));
@@ -101,7 +114,7 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
   });
 
   route('GET', '/api/bootstrap', 'operador', ({ user }) => ({
-    user: auth.publicUser(user), config: publicConfig(), state: state(), log: activity.slice(0, 200),
+    user: auth.publicUser(user), config: publicConfig(), state: state(), log: activity.slice(0, 200), files: files.list(),
     settings: hasRole(user, 'admin') ? publicSettings() : undefined,
   }));
 
@@ -222,9 +235,14 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
       if (next.qlab.workspace.includes('/')) throw new HttpError(400, 'El workspace no puede contener «/».');
     }
     if (body.watchout) next.watchout = { host: String(body.watchout.host ?? '').trim(), port: port(body.watchout.port, 3019) };
+    if (body.presentation) {
+      const driver = ['keynote', 'simulado'].includes(body.presentation.driver) ? body.presentation.driver : next.presentation.driver;
+      next.presentation = { driver, watchoutTimelineId: String(body.presentation.watchoutTimelineId ?? '').trim().slice(0, 64) };
+    }
     store.saveSettings(next);
     if (body.qlab) qlab.configure(next.qlab);
     if (body.watchout) watchout.configure(next.watchout);
+    if (body.presentation) presenter.configure(next.presentation);
     log('•', 'Ajustes', `Conexiones actualizadas por ${user.username}`);
     return publicSettings();
   });
@@ -245,6 +263,51 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
     if (!demo) throw new HttpError(404, 'Demo no encontrada.');
     return demo;
   }
+  // Archivos y presentaciones
+  route('GET', '/api/files', 'operador', () => ({ files: files.list() }));
+  route('POST', '/api/files', 'editor', async ({ req, url, user }) => {
+    const file = await files.upload(req, { name: url.searchParams.get('name'), user: user.username });
+    log('⬆', 'Archivos', `«${file.name}» subido por ${user.username}`);
+    filesChanged();
+    return { file };
+  }, { raw: true });
+  route('DELETE', '/api/files/:id', 'editor', ({ params, user }) => {
+    if (presenter.state.fileId === params.id && presenter.state.status !== 'idle') throw new HttpError(409, 'Esa presentación se está reproduciendo.');
+    const users = store.config.demos.filter((d) => ['preparation', 'launch', 'finish'].some((p) => d[p].some((s) => s.kind === 'presentationStart' && s.value === params.id)));
+    const name = files.get(params.id)?.name;
+    files.remove(params.id);
+    log('•', 'Archivos', `«${name}» borrado por ${user.username}${users.length ? ` (lo usaban: ${users.map((d) => d.name).join(', ')})` : ''}`);
+    filesChanged();
+    return { ok: true, usedBy: users.map((d) => d.name) };
+  });
+  route('POST', '/api/presentations', 'editor', ({ body, user }) => {
+    const file = files.get(String(body.fileId ?? ''));
+    if (!file) throw new HttpError(404, 'Archivo no encontrado.');
+    const timeline = store.settings.presentation.watchoutTimelineId;
+    const name = String(body.name ?? '').trim() || file.name.replace(/\.[^.]+$/, '');
+    const launch = [{ kind: 'presentationStart', title: 'Abrir presentación', value: file.id }];
+    const finish = [{ kind: 'presentationStop', title: 'Cerrar presentación' }];
+    if (timeline) {
+      launch.push({ kind: 'watchoutPlay', title: 'Mostrar en las paredes', value: timeline });
+      finish.unshift({ kind: 'watchoutStop', title: 'Quitar de las paredes', value: timeline });
+    }
+    const demo = normalizeDemo({
+      name, summary: String(body.summary ?? ''), symbol: 'rectangle.on.rectangle', colorHex: '#F0A020', estimatedMinutes: 15,
+      requiresLaunchConfirmation: false, launch, finish, order: store.config.demos.length, id: newID(),
+    });
+    saveConfig({ ...store.config, demos: [...store.config.demos, demo] });
+    log('•', 'Demos', `Presentación «${demo.name}» creada por ${user.username}`);
+    return { demo };
+  });
+  const presenterAction = (fn) => async () => {
+    try { await fn(); } catch (error) { throw new HttpError(409, error.message); }
+    return { ok: true, presentation: presenter.snapshot() };
+  };
+  route('POST', '/api/presentation/next', 'operador', presenterAction(() => presenter.next()));
+  route('POST', '/api/presentation/previous', 'operador', presenterAction(() => presenter.previous()));
+  route('POST', '/api/presentation/stop', 'operador', presenterAction(() => presenter.stop()));
+  route('POST', '/api/presentation/goto', 'operador', ({ body }) => presenterAction(() => presenter.goto(body.slide))());
+
   function saveConfig(config) { store.saveConfig(config); configChanged(); }
   function setSession(res, user) {
     const { token, maxAge } = auth.issue(user);
@@ -286,7 +349,8 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
       .find(({ m }) => m);
     if (!match) throw new HttpError(404, 'Ruta no encontrada.');
     const { r, m } = match;
-    if (req.method !== 'GET' && !String(req.headers['content-type'] ?? '').startsWith('application/json')) {
+    if (r.raw ? req.headers['x-salain-upload'] !== '1'
+      : req.method !== 'GET' && !String(req.headers['content-type'] ?? '').startsWith('application/json')) {
       // Protección CSRF básica: los formularios de otros sitios no pueden enviar JSON.
       throw new HttpError(415, 'Se esperaba JSON.');
     }
@@ -294,7 +358,7 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
     if (r.role && !user) throw new HttpError(401, 'Inicia sesión.');
     if (r.role && !hasRole(user, r.role)) throw new HttpError(403, 'Tu usuario no tiene permiso para esto.');
     const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1])]));
-    const body = req.method === 'GET' ? {} : await readBody(req);
+    const body = req.method === 'GET' || r.raw ? {} : await readBody(req);
     const result = await r.handler({ req, res, params, body, user, url });
     json(res, 200, result ?? { ok: true });
   }
@@ -315,10 +379,11 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
     clearInterval(keepAlive);
     qlab.stop();
     watchout.stop();
+    presenter.stopPolling();
     for (const c of clients) c.end();
   });
 
-  return { server, store, qlab, watchout, runner, auth };
+  return { server, store, qlab, watchout, runner, auth, presenter, files };
 }
 
 function json(res, status, value) {

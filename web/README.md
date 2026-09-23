@@ -15,6 +15,7 @@ Lo que hace:
   Solo hay una demo activa: **si se lanza otra, primero se ejecuta la Finalización de la activa**.
   Los pasos pueden ser comandos OSC de QLab, reproducir/pausar/parar un timeline de WATCHOUT, esperas,
   confirmaciones o instrucciones (aparecen en todos los móviles conectados).
+- **Presentaciones**: subir un Keynote o PowerPoint desde el móvil y presentarlo en las 4 paredes con mando de diapositivas (ver más abajo).
 - **Editor de demos** en el navegador (usuarios con rol *editor* o *admin*).
 - **Constellation**, **Check** (check altavoces, stop, reset AVB) y **ON/OFF** de la sala, igual que en la app de iPad.
 - **Usuarios** con tres roles: *operador* (lanza), *editor* (crea y edita demos) y *admin* (además ajustes y usuarios).
@@ -124,14 +125,43 @@ Configura en Ajustes QLab `127.0.0.1:53000` y WATCHOUT `127.0.0.1:3019`.
 
 El archivo exportado mantiene el formato de la app, así que puede ir y volver. Dos diferencias:
 
-- Los pasos y botones de **WATCHOUT** solo existen en la web. La app de iPad no los reconoce: si una
+- Los pasos y botones de **WATCHOUT** y de **presentaciones** solo existen en la web. La app de iPad no los reconoce: si una
   demo los usa, no la importes en el iPad.
 - Los comandos OSC admiten argumentos separados por espacios (`/cue/1/sliderLevel 0 -10`). La app de
   iPad envía el texto entero como dirección.
 
-## Siguiente fase: presentaciones por NDI
+## Presentaciones (Keynote en las 4 paredes)
 
-Pendiente de probar en la sala. Plan: Keynote en pantalla completa en el Mac → NDI (NDI Tools
-Scan Converter o alternativas) → fuente *NDI Capture* en un timeline «Presentación» de WATCHOUT 7
-colocada sobre la tira de las 4 paredes. La web tendrá un tipo de demo «Presentación» para subir el
-archivo, abrirlo en Keynote y pasar diapositivas (AppleScript: `show next` / `show previous`).
+Desde **Demos → ＋ Presentación** se sube un Keynote (`.key`) o PowerPoint (`.pptx`) y se crea una demo que:
+
+1. **Al lanzar**: abre el archivo en Keynote en este Mac, empieza la presentación a pantalla completa y
+   reproduce en WATCHOUT el timeline de presentaciones (el que tiene la fuente NDI).
+2. **Mientras está en curso**: el móvil muestra el mando de diapositivas (Anterior / Siguiente, ir a una
+   diapositiva). «Siguiente» avanza también las animaciones, igual que el clicker. En un ordenador valen las
+   flechas del teclado y la barra espaciadora. El mando también aparece en el banner de la demo activa.
+3. **Al finalizar** (o al lanzar otra demo): para el timeline de WATCHOUT y cierra Keynote.
+
+Los archivos subidos se gestionan en **Demos → 📁** (máximo 2 GB por archivo). Los pasos
+«Presentación: abrir y empezar» y «Presentación: cerrar» se pueden añadir a cualquier demo en el editor.
+
+Sobre los archivos de Keynote: si el navegador no deja elegir un `.key` (ocurre cuando está guardado como
+paquete), en Keynote usa **Archivo → Avanzado → Cambiar tipo de archivo → Archivo único**, o comprímelo en
+`.zip` y sube el `.zip`. Los `.pptx` los abre Keynote importándolos (puede cambiar alguna fuente o transición).
+
+### Puesta a punto en la sala (una sola vez)
+
+1. **Keynote en el Mac** donde corre la web. En *Keynote → Ajustes → Presentación*, elige en qué pantalla se
+   presenta. Para la resolución ultra-ancha de las 4 paredes se puede crear una pantalla virtual con
+   BetterDisplay.
+2. **NDI**: instala NDI Tools y abre **NDI Scan Converter** capturando esa pantalla. Si no detecta la pantalla
+   de Keynote, la alternativa probada por otros usuarios es *Sienna NDI ScanConverter* (App Store, de pago).
+3. **WATCHOUT 7**: crea un timeline «Presentación» con una fuente *NDI Capture* colocada sobre la tira de las
+   4 paredes y un fondo fijo en el suelo.
+4. **Web → Ajustes → Presentaciones**: reproductor «Keynote en este Mac» y el timeline del paso 3.
+5. La primera vez que la web abra Keynote, macOS pedirá permiso para que *node* controle Keynote: pulsa
+   **Aceptar**. Si se deniega, se cambia en *Ajustes del Sistema → Privacidad y seguridad → Automatización*.
+
+La web debe ejecutarse con la sesión del usuario abierta en el Mac (el arranque automático de
+`deploy/` ya lo hace así); Keynote necesita la pantalla del usuario para presentar.
+
+En el modo demostración y en pruebas se usa el reproductor **simulado** (12 diapositivas ficticias).
