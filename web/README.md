@@ -83,6 +83,30 @@ La primera vez, macOS preguntará si permites a `node` aceptar conexiones entran
 2. En la web, **Ajustes** debe mostrar QLab y WATCHOUT en verde.
 3. Crea una demo de prueba con un paso *WATCHOUT: reproducir timeline* y otro de QLab, y lánzala.
 
+## Verla en tu ordenador (modo demostración)
+
+Para ver la web completa sin estar en la sala, con QLab y WATCHOUT simulados y demos de ejemplo:
+
+```sh
+cd Sala-In/web
+npm run demo
+```
+
+Abre <http://localhost:8080> y entra con **admin / demo1234** (todo) o **sala / demo1234** (solo lanzar).
+Desde el móvil, en la misma Wi‑Fi, usa la IP del ordenador: `http://IP-del-ordenador:8080`.
+Usa su propia carpeta `data-demo/` y puertos distintos de los reales, así que no afecta a la sala.
+`npm run demo -- --reset` restaura los datos de ejemplo. `PORT=9000 npm run demo` cambia el puerto.
+
+### Dónde tocar la estética
+
+- `public/styles.css`: colores (variables al principio: `--bg`, `--surface`, `--accent`, `--ok`, `--danger`…),
+  tipografía, tamaños de botones (`.big-button`), tarjetas (`.card`, `.demo-card`) y la barra inferior (`.tabs`).
+- `public/app.js`: textos, iconos disponibles (`ICONS`), paleta de colores del editor (`COLORS`) y la
+  estructura de cada pantalla (funciones `demosView`, `demoDetailView`, `constellationView`, `checkView`…).
+- `public/img/`: logos e icono de la app.
+
+Basta con guardar y recargar el navegador: no hay que compilar ni reiniciar el servidor.
+
 ## Desarrollo y pruebas sin la sala
 
 Simuladores incluidos:

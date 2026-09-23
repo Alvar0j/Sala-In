@@ -4,9 +4,12 @@
   "private": true,
   "description": "Control web de la sala inmersiva: demos con QLab (OSC) y WATCHOUT 7 (HTTP).",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node src/server.js",
+    "demo": "node tools/demo.js",
     "dev": "node --watch src/server.js",
     "mock:qlab": "node tools/mock-qlab.js",
     "mock:watchout": "node tools/mock-watchout.js",
