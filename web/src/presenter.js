@@ -116,7 +116,8 @@ const idleState = () => ({ status: 'idle', fileId: null, fileName: '', demoId: n
 
 // --- Keynote (macOS) --------------------------------------------------------------
 
-const KEYNOTE = 'application id "com.apple.iWork.Keynote"';
+// Por nombre: el identificador cambió entre versiones (com.apple.iWork.Keynote → com.apple.Keynote).
+const KEYNOTE = 'application "Keynote"';
 
 export class KeynoteDriver {
   constructor({ exec = runAppleScript } = {}) { this.exec = exec; }
@@ -186,6 +187,9 @@ export function runAppleScript(lines, args = [], timeout = 15_000) {
     execFile('osascript', argv, { timeout }, (error, stdout, stderr) => {
       if (error) {
         const message = String(stderr || error.message).trim();
+        if (/-1728|-10814|No puede obtenerse application|Can.t get application/i.test(message)) {
+          return reject(new Error('No se encuentra Keynote en este Mac. Instálalo desde la App Store y ábrelo una vez.'));
+        }
         if (/-1743|not authori[sz]ed/i.test(message)) {
           return reject(new Error('macOS no permite que la web controle Keynote. Actívalo en Ajustes del Sistema → Privacidad y seguridad → Automatización.'));
         }
