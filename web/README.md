@@ -151,12 +151,13 @@ Se hace en dos partes: primero comprobar que la web controla Keynote y después 
 ### 5.2 Llevar Keynote a las cuatro paredes
 
 1. **Pantalla para Keynote.** Si Keynote presenta en la pantalla principal del Mac mini, tapa QLab mientras dura
-   la presentación. Crea una **pantalla virtual** (por ejemplo con BetterDisplay; la función puede requerir su
-   licencia) con la proporción de la tira de paredes, y en **Keynote → Ajustes → Presentación** elige esa pantalla.
+   la presentación. Crea una **pantalla virtual de 7000 × 600** (por ejemplo con BetterDisplay; la función puede
+   requerir su licencia) y en **Keynote → Ajustes → Presentación** elige esa pantalla. Las medidas de la sala y la
+   plantilla de diapositivas están en [docs/plantilla](../docs/plantilla/README.md).
 2. **NDI.** Abre **NDI Scan Converter** (de NDI Tools) capturando esa pantalla. Si no la detecta, otros usuarios
    lo han resuelto con *Sienna NDI ScanConverter* (App Store, de pago).
-3. **WATCHOUT.** En Producer crea un timeline **«Presentación»** con una fuente **NDI Capture** colocada sobre
-   la tira de las 4 paredes y un fondo fijo en el suelo.
+3. **WATCHOUT.** En Producer crea un timeline **«Presentación»** con una fuente **NDI Capture** en x = 0, y = 0
+   escalada al 200 % (cubre la tira de 14000 × 1200 de las 4 paredes) y un fondo fijo en el suelo.
 4. **Ajustes → Presentaciones**: elige ese timeline. Las presentaciones nuevas lo reproducen al lanzar y lo
    paran al finalizar.
 

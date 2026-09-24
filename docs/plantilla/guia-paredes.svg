@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="7000" height="600" viewBox="0 0 7000 600">
+  <!-- Guía de las 4 paredes de la sala (lienzo 7000×600 = Stage de WATCHOUT 14000×1200 al 50 %).
+       Cada pared: 1750×600. Úsala como fondo de la plantilla de Keynote y bórrala o ocúltala al presentar. -->
+  <rect width="7000" height="600" fill="#101418"/>
+  <g font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+    <rect x="0" y="0" width="1750" height="600" fill="#1B2A44"/>
+    <rect x="1750" y="0" width="1750" height="600" fill="#1D3A2E"/>
+    <rect x="3500" y="0" width="1750" height="600" fill="#3D3517"/>
+    <rect x="5250" y="0" width="1750" height="600" fill="#3E1F35"/>
+    <text x="875" y="270" font-size="120" font-weight="700" fill="#8FB4FF">PARED A</text>
+    <text x="2625" y="270" font-size="120" font-weight="700" fill="#7FE0B0">PARED B</text>
+    <text x="4375" y="270" font-size="120" font-weight="700" fill="#F2D06B">PARED C</text>
+    <text x="6125" y="270" font-size="120" font-weight="700" fill="#F29BD2">PARED D</text>
+    <g font-size="44" fill="#FFFFFF" fill-opacity="0.55">
+      <text x="875" y="350">0 – 1750</text><text x="2625" y="350">1750 – 3500</text>
+      <text x="4375" y="350">3500 – 5250</text><text x="6125" y="350">5250 – 7000</text>
+    </g>
+    <g font-size="34" fill="#FFFFFF" fill-opacity="0.4">
+      <text x="875" y="420">proyectores A1 + A2</text><text x="2625" y="420">proyectores B1 + B2</text>
+      <text x="4375" y="420">proyectores C1 + C2</text><text x="6125" y="420">proyectores D1 + D2</text>
+    </g>
+  </g>
+  <g stroke="#FFFFFF" stroke-width="6" stroke-dasharray="30 20" stroke-opacity="0.8">
+    <line x1="1750" y1="0" x2="1750" y2="600"/><line x1="3500" y1="0" x2="3500" y2="600"/><line x1="5250" y1="0" x2="5250" y2="600"/>
+  </g>
+  <!-- Zona segura: deja ~60 px de margen en cada unión para que el texto no quede partido entre dos paredes -->
+  <g fill="#FFFFFF" fill-opacity="0.06">
+    <rect x="1690" y="0" width="120" height="600"/><rect x="3440" y="0" width="120" height="600"/><rect x="5190" y="0" width="120" height="600"/>
+  </g>
+  <rect x="3" y="3" width="6994" height="594" fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="6"/>
+</svg>
