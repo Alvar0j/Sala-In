@@ -143,3 +143,20 @@ test('QLab: con el workspace vacío usa el abierto; con un nombre que no existe 
     mock.close();
   }
 });
+
+test('QLab: si rechaza la conexión («data: error») no se marca como conectado', async () => {
+  const { QLabClient } = await import('../src/qlab.js');
+  process.env.MOCK_DENY = '1';
+  const mock = await startMockQLab({ port: 0, log: () => {} });
+  const client = new QLabClient({ log: () => {} });
+  try {
+    client.configure({ host: '127.0.0.1', port: mock.port, workspace: '', replyPort: 40000 + Math.floor(Math.random() * 20000), passcode: '' });
+    for (let i = 0; i < 100 && client.status !== 'error'; i++) await new Promise((r) => setTimeout(r, 20));
+    assert.equal(client.ready, false);
+    assert.match(client.detail, /OSC Access/);
+  } finally {
+    delete process.env.MOCK_DENY;
+    client.stop();
+    mock.close();
+  }
+});

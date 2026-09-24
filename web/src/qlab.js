@@ -246,7 +246,7 @@ export class QLabClient extends EventEmitter {
       const data = envelope?.data;
       // QLab 5 responde "ok" (o data "ok:view|edit|control"); "badpass" si el passcode es incorrecto.
       const text = typeof data === 'string' ? data : '';
-      const denied = text === 'badpass' || (text.startsWith('ok:') && !text.includes('control'));
+      const denied = ['badpass', 'error', 'denied'].includes(text) || (text.startsWith('ok:') && !text.includes('control'));
       if (status === 'ok' && !denied) {
         const first = !this.ready;
         this.ready = true;
@@ -259,6 +259,7 @@ export class QLabClient extends EventEmitter {
         }
       } else {
         const reason = status === 'badpass' || text === 'badpass' ? 'Passcode incorrecto'
+          : ['error', 'denied'].includes(text) ? 'QLab rechaza la conexión: revisa OSC Access en Workspace Settings → Network (permisos sin passcode o crea un passcode con Control)'
           : text.startsWith('ok:') ? 'El passcode no tiene permiso de control' : 'Workspace o permisos no válidos';
         this.log('!', 'Autenticación', reason);
         this.ready = false;

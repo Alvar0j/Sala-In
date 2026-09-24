@@ -31,6 +31,7 @@ export function startMockQLab({ port = 53000, passcode = '', log = console.log }
     const nameMatch = address.match(/\/cue\/(\w+)\/name$/);
     if (nameMatch) return MOCK_CUES[nameMatch[1]] ? reply(rinfo, address, `${nameMatch[1]} · ${MOCK_CUES[nameMatch[1]]}`) : reply(rinfo, address, undefined, 'error');
     if (address.endsWith('/connect')) {
+      if (process.env.MOCK_DENY) return reply(rinfo, address, 'error'); // como QLab sin permisos de OSC Access
       const ok = !passcode || args[0]?.value === passcode;
       return reply(rinfo, address, ok ? 'ok:view|edit|control' : 'badpass');
     }
