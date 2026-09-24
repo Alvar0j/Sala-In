@@ -28,18 +28,19 @@ test('el controlador de Keynote pasa la ruta como argumento, no dentro del scrip
   const calls = [];
   const exec = async (lines, args = []) => {
     calls.push({ script: lines.join('\n'), args });
-    if (lines.join('\n').includes('count of slides of theDoc) as text\n')) return '8';
+    if (lines.join('\n').includes('return (count of slides of theDoc) as text')) return '8';
     return lines.join('\n').includes('slide number') ? '3/8' : '';
   };
-  const driver = new KeynoteDriver({ exec });
+  const opened = [];
+  const driver = new KeynoteDriver({ exec, openFile: async (p) => { opened.push(p); } });
   const evil = '/tmp/a" & (do shell script "rm -rf ~") & ".key';
   const { total } = await driver.open(evil);
   assert.equal(total, 8);
-  assert.equal(calls[0].args[0], evil);
-  assert.equal(calls[0].script.includes('rm -rf'), false);
-  assert.match(calls[0].script, /start theDoc from first slide/);
+  assert.deepEqual(opened, [evil], 'el archivo se abre con `open -a Keynote`, no desde AppleScript');
+  assert.equal(calls.some((c) => c.script.includes('rm -rf')), false);
+  assert.match(calls.at(-1).script, /start theDoc from first slide/);
   await driver.next();
-  assert.match(calls[1].script, /show next/);
+  assert.match(calls.at(-1).script, /show next/);
   assert.deepEqual(await driver.status(), { playing: true, slide: 3, total: 8 });
 });
 

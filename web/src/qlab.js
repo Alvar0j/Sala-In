@@ -162,7 +162,6 @@ export class QLabClient extends EventEmitter {
     const { passcode } = this.settings;
     try {
       this.rawSend({ address: QLabPath.workspace(this.workspaceId, 'connect'), args: passcode ? [{ type: 's', value: passcode }] : [] });
-      this.rawSend({ address: QLabPath.workspace(this.workspaceId, 'updates'), args: [{ type: 'i', value: 1 }] });
       this.rawSend({ address: '/udpKeepAlive', args: [{ type: 'i', value: 1 }] });
       this.rawSend({ address: '/version', args: [] });
     } catch (error) {
@@ -254,6 +253,8 @@ export class QLabClient extends EventEmitter {
         this.setStatus('connected', '');
         if (first) {
           this.log('✓', 'QLab', 'Workspace autenticado y listo');
+          // Las actualizaciones se piden cuando QLab ya ha aceptado la conexión.
+          try { this.rawSend({ address: QLabPath.workspace(this.workspaceId, 'updates'), args: [{ type: 'i', value: 1 }] }); } catch {}
           this.later(HEARTBEAT_MS, () => this.heartbeat());
           this.refreshCues();
         }

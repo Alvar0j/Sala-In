@@ -120,24 +120,37 @@ const idleState = () => ({ status: 'idle', fileId: null, fileName: '', demoId: n
 const KEYNOTE = 'application "Keynote"';
 
 export class KeynoteDriver {
-  constructor({ exec = runAppleScript } = {}) { this.exec = exec; }
+  constructor({ exec = runAppleScript, openFile = openWithKeynote } = {}) { this.exec = exec; this.openFile = openFile; }
 
   async open(path) {
-    // Cierra lo que hubiera abierto, abre el archivo (también .pptx, que Keynote importa)
-    // y arranca la presentación a pantalla completa desde la primera diapositiva.
-    const out = await this.exec([
-      'on run argv',
+    // 1) Cierra lo que hubiera abierto en Keynote.
+    await this.exec([
+      `if ${KEYNOTE} is running then`,
       `  tell ${KEYNOTE}`,
-      '    activate',
       '    if playing then stop front document',
       '    close every document saving no',
-      '    set theDoc to open (POSIX file (item 1 of argv))',
-      '    delay 1',
-      '    start theDoc from first slide of theDoc',
-      '    return (count of slides of theDoc) as text',
       '  end tell',
-      'end run',
-    ], [path], 120_000);
+      'end if',
+    ]);
+    // 2) Abre el archivo como lo haría el Finder (`open -a Keynote`). Keynote es una app
+    //    protegida (sandbox) y rechaza con «Operación no permitida» los archivos que se le
+    //    piden por AppleScript; abierto así, macOS le da permiso para leerlo.
+    await this.openFile(path);
+    // 3) Espera a que el documento esté abierto (los .pptx tardan en importarse) y arranca.
+    const out = await this.exec([
+      `tell ${KEYNOTE}`,
+      '  activate',
+      '  repeat 120 times',
+      '    if (count of documents) > 0 then exit repeat',
+      '    delay 0.5',
+      '  end repeat',
+      '  if (count of documents) = 0 then error "Keynote no ha llegado a abrir el archivo (¿hay algún aviso en pantalla?)"',
+      '  delay 1',
+      '  set theDoc to front document',
+      '  start theDoc from first slide of theDoc',
+      '  return (count of slides of theDoc) as text',
+      'end tell',
+    ], [], 120_000);
     return { total: Number.parseInt(out, 10) || 0 };
   }
 
@@ -178,6 +191,19 @@ export class KeynoteDriver {
   }
 }
 
+export function openWithKeynote(path) {
+  if (process.platform !== 'darwin') return Promise.reject(new Error('Keynote solo está disponible si la web corre en un Mac.'));
+  return new Promise((resolve, reject) => {
+    execFile('open', ['-a', 'Keynote', path], { timeout: 30_000 }, (error, _out, stderr) => {
+      if (!error) return resolve();
+      const message = String(stderr || error.message).trim();
+      reject(new Error(/Unable to find application|no se puede encontrar la aplicación/i.test(message)
+        ? 'No se encuentra Keynote en este Mac. Instálalo desde la App Store y ábrelo una vez.'
+        : `No se pudo abrir el archivo en Keynote: ${message}`));
+    });
+  });
+}
+
 export function runAppleScript(lines, args = [], timeout = 15_000) {
   if (process.platform !== 'darwin') {
     return Promise.reject(new Error('Keynote solo está disponible si la web corre en un Mac. Usa el reproductor «simulado» para probar.'));
@@ -187,7 +213,7 @@ export function runAppleScript(lines, args = [], timeout = 15_000) {
     execFile('osascript', argv, { timeout }, (error, stdout, stderr) => {
       if (error) {
         const message = String(stderr || error.message).trim();
-        if (/-1728|-10814|No puede obtenerse application|Can.t get application/i.test(message)) {
+        if (/-10814|No puede obtenerse application "Keynote"|Can.t get application "Keynote"/i.test(message)) {
           return reject(new Error('No se encuentra Keynote en este Mac. Instálalo desde la App Store y ábrelo una vez.'));
         }
         if (/-1743|not authori[sz]ed/i.test(message)) {
