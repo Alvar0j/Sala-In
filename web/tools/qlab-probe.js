@@ -30,6 +30,10 @@ function send(address, args = []) {
 socket.bind(0, async () => {
   console.log(`Probando QLab en ${host}:53000 (respuestas en el puerto ${socket.address().port})\n`);
   const pass = passcode ? [{ type: 's', value: passcode }] : [];
+  // QLab recuerda el puerto de respuesta de cada ordenador (la web usa 53001):
+  // se le indica el de esta prueba para recibir las respuestas aquí.
+  socket.send(encode({ address: '/udpReplyPort', args: [{ type: 'i', value: socket.address().port }] }), 53000, host);
+  await new Promise((r) => setTimeout(r, 200));
   await send('/version');
   const list = await send('/workspaces');
   let id = '';
@@ -41,6 +45,7 @@ socket.bind(0, async () => {
   }
   await send('/connect', pass);
   await send(`/cue/${cue}/name`);
-  socket.close();
+  // Deja el puerto de respuesta como lo usa la web.
+  socket.send(encode({ address: '/udpReplyPort', args: [{ type: 'i', value: 53001 }] }), 53000, host, () => socket.close());
   console.log('\nFin. Copia todo lo anterior y pásaselo a Claude.');
 });
