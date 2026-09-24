@@ -843,7 +843,7 @@ function settingsView() {
       h('div', { class: 'form-grid' },
         field('IP del Mac de QLab', input(d.qlab, 'host', 'text', '127.0.0.1 si está en este Mac')),
         field('Puerto OSC de QLab', input(d.qlab, 'port', 'number')),
-        field('Workspace (nombre o ID, vacío = el que esté al frente)', input(d.qlab, 'workspace')),
+        field('Workspace (nombre tal como aparece en QLab; vacío = el que esté abierto)', input(d.qlab, 'workspace')),
         field('Puerto local para respuestas', input(d.qlab, 'replyPort', 'number')),
         field(d.qlab.hasPasscode ? 'Passcode (guardado; escribe para cambiarlo)' : 'Passcode de OSC Access', h('input', { type: 'password', value: d.qlab.passcode, autocomplete: 'new-password', oninput: (e) => { d.qlab.passcode = e.target.value; } }))),
       h('div', { class: 'row end' }, d.qlab.hasPasscode ? h('button', { class: 'small ghost', onclick: clearPasscode }, 'Quitar passcode') : null, h('button', { class: 'primary small', onclick: saveQLab }, 'Guardar QLab'))),
@@ -863,7 +863,9 @@ function settingsView() {
 function statusLine(snapshot, id) {
   const cls = snapshot.status === 'connected' ? 'ok' : snapshot.status === 'connecting' ? 'warn' : 'bad';
   return h('p', { class: 'small', id }, h('span', { class: `dot ${cls}`, style: { display: 'inline-block', marginRight: '6px' } }),
-    snapshot.status === 'connected' ? `Conectado${snapshot.version ? ` · versión ${snapshot.version}` : ''}` : snapshot.detail || snapshot.status);
+    snapshot.status === 'connected'
+      ? `Conectado${snapshot.version ? ` · versión ${snapshot.version}` : ''}${snapshot.cues && snapshot.workspace ? ` · workspace «${snapshot.workspace}»` : ''}`
+      : snapshot.detail || snapshot.status);
 }
 
 function presentationSettingsCard(d) {

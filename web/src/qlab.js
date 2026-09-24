@@ -10,6 +10,10 @@ export const QLabPath = {
   workspace: (ws, command) => (ws ? `/workspace/${escape(ws)}/${command}` : `/${command}`),
 };
 
+// Mensajes de aplicación: no llevan /workspace/{id} delante.
+const APP_LEVEL = new Set(['version', 'workspaces', 'alwaysReply', 'udpReplyPort', 'udpKeepAlive', 'forgetMeNot', 'connect', 'disconnect', 'workspace']);
+const WORKSPACES_TIMEOUT_MS = 1_500;
+
 const HEARTBEAT_MS = 20_000;
 const SILENCE_LIMIT_MS = 65_000;
 const CONNECT_TIMEOUT_MS = 4_000;
@@ -27,6 +31,8 @@ export class QLabClient extends EventEmitter {
     this.ready = false;
     this.version = '';
     this.cues = [];
+    this.workspaceId = '';   // ID interno del workspace elegido
+    this.workspaceName = '';
     this.lastMessageAt = 0;
     this.attempt = 0;
     this.timers = new Set();
@@ -36,7 +42,7 @@ export class QLabClient extends EventEmitter {
   snapshot() {
     return {
       status: this.status, detail: this.detail, ready: this.ready, version: this.version,
-      host: this.settings?.host ?? '', port: this.settings?.port ?? 0, workspace: this.settings?.workspace ?? '',
+      host: this.settings?.host ?? '', port: this.settings?.port ?? 0, workspace: this.workspaceName || this.settings?.workspace || '',
       cues: this.cues,
     };
   }
@@ -87,6 +93,7 @@ export class QLabClient extends EventEmitter {
   open() {
     const { host, port, replyPort } = this.settings;
     this.ready = false;
+    this.connectSent = false;
     this.setStatus('connecting', this.attempt ? `Reintento ${this.attempt}` : '');
     const socket = this.socketFactory();
     this.socket = socket;
@@ -102,21 +109,69 @@ export class QLabClient extends EventEmitter {
   }
 
   handshake() {
-    const { workspace, passcode, replyPort } = this.settings;
+    // 1) Se pregunta qué workspaces hay abiertos para usar su ID interno en todos los
+    //    comandos (QLab rechaza /cue/... sin workspace, y los nombres con espacios dan problemas).
+    // 2) Si QLab no contesta a /workspaces, se usa lo escrito en Ajustes tal cual.
+    const { replyPort } = this.settings;
+    this.workspaceId = '';
+    this.workspaceName = '';
     try {
       this.rawSend({ address: '/udpReplyPort', args: [{ type: 'i', value: replyPort }] });
-      this.rawSend({ address: QLabPath.workspace(workspace, 'connect'), args: passcode ? [{ type: 's', value: passcode }] : [] });
       this.rawSend({ address: '/alwaysReply', args: [{ type: 'i', value: 1 }] });
-      this.rawSend({ address: QLabPath.workspace(workspace, 'updates'), args: [{ type: 'i', value: 1 }] });
-      this.rawSend({ address: '/udpKeepAlive', args: [{ type: 'i', value: 1 }] });
-      this.rawSend({ address: '/version', args: [] });
+      this.rawSend({ address: '/workspaces', args: [] });
     } catch (error) {
       this.fail(error.message);
       return;
     }
+    this.later(WORKSPACES_TIMEOUT_MS, () => {
+      if (!this.workspaceId && !this.connectSent) this.connectWorkspace(this.settings.workspace, this.settings.workspace);
+    });
     this.later(CONNECT_TIMEOUT_MS, () => {
       if (!this.ready) this.fail(this.detail && this.status === 'error' ? this.detail : 'QLab no responde');
     });
+  }
+
+  chooseWorkspace(list) {
+    const wanted = String(this.settings.workspace ?? '').trim();
+    const clean = (name) => String(name ?? '').trim().toLowerCase().replace(/\.qlab\d*$/, '');
+    const workspaces = (Array.isArray(list) ? list : []).filter((w) => w?.uniqueID);
+    if (!workspaces.length) {
+      this.setStatus('error', 'QLab no tiene ningún workspace abierto');
+      return;
+    }
+    const found = wanted
+      ? workspaces.find((w) => w.uniqueID === wanted || clean(w.displayName) === clean(wanted))
+      : workspaces[0];
+    if (!found) {
+      const names = workspaces.map((w) => `«${w.displayName}»`).join(', ');
+      this.log('!', 'QLab', `No hay ningún workspace llamado «${wanted}». Abiertos: ${names}`);
+      this.setStatus('error', `Workspace «${wanted}» no encontrado. Abiertos: ${names}`);
+      return;
+    }
+    this.connectWorkspace(found.uniqueID, found.displayName ?? found.uniqueID);
+  }
+
+  connectWorkspace(id, name) {
+    if (this.connectSent) return;
+    this.connectSent = true;
+    this.workspaceId = id ?? '';
+    this.workspaceName = name ?? '';
+    const { passcode } = this.settings;
+    try {
+      this.rawSend({ address: QLabPath.workspace(this.workspaceId, 'connect'), args: passcode ? [{ type: 's', value: passcode }] : [] });
+      this.rawSend({ address: QLabPath.workspace(this.workspaceId, 'updates'), args: [{ type: 'i', value: 1 }] });
+      this.rawSend({ address: '/udpKeepAlive', args: [{ type: 'i', value: 1 }] });
+      this.rawSend({ address: '/version', args: [] });
+    } catch (error) {
+      this.fail(error.message);
+    }
+  }
+
+  /** Añade /workspace/{id} a los comandos que no lo llevan. */
+  scoped(address) {
+    if (!this.workspaceId || address.startsWith('/workspace/')) return address;
+    const first = address.split('/')[1] ?? '';
+    return APP_LEVEL.has(first) ? address : `/workspace/${escape(this.workspaceId)}${address}`;
   }
 
   fail(reason) {
@@ -140,7 +195,7 @@ export class QLabClient extends EventEmitter {
       this.fail('Sin respuesta de QLab');
       return;
     }
-    try { this.rawSend({ address: QLabPath.workspace(this.settings.workspace, 'thump'), args: [] }); } catch {}
+    try { this.rawSend({ address: QLabPath.workspace(this.workspaceId, 'thump'), args: [] }); } catch {}
     this.later(HEARTBEAT_MS, () => this.heartbeat());
   }
 
@@ -154,13 +209,14 @@ export class QLabClient extends EventEmitter {
   async send(command) {
     if (!this.ready) throw new Error('QLab no está conectado. Revisa la conexión en Ajustes.');
     const message = parseCommand(command);
+    message.address = this.scoped(message.address);
     this.rawSend(message);
     this.log('→', command, 'Enviado');
   }
 
   refreshCues() {
     if (!this.ready) return;
-    const ws = this.settings.workspace;
+    const ws = this.workspaceId;
     try {
       this.rawSend({ address: QLabPath.workspace(ws, 'cueLists/shallow'), args: [] });
       this.rawSend({ address: QLabPath.workspace(ws, 'runningOrPausedCues/shallow'), args: [] });
@@ -178,6 +234,10 @@ export class QLabClient extends EventEmitter {
     const json = message.args[0]?.type === 's' ? message.args[0].value : null;
     const envelope = json ? safeJSON(json) : null;
 
+    if (address === '/reply/workspaces') {
+      if (!this.connectSent) this.chooseWorkspace(envelope?.data);
+      return;
+    }
     if (address.endsWith('/connect') && address.startsWith('/reply')) {
       const status = envelope?.status ?? '';
       const data = envelope?.data;
@@ -224,8 +284,13 @@ export class QLabClient extends EventEmitter {
       this.refreshTimer = setTimeout(() => this.refreshCues(), 250);
       return;
     }
-    if (address.startsWith('/reply') && envelope?.status && envelope.status !== 'ok' && !address.endsWith('/thump')) {
-      this.log('!', address.replace(/^\/reply/, ''), `QLab respondió: ${envelope.status}`);
+    if (!address.startsWith('/reply') || address.endsWith('/thump')) return;
+    const shown = address.replace(/^\/reply/, '').replace(/^\/workspace\/[^/]+/, '');
+    if (envelope?.status && envelope.status !== 'ok') {
+      this.log('!', shown, `QLab respondió: ${envelope.status}`);
+    } else if (['string', 'number', 'boolean'].includes(typeof envelope?.data)
+      && !APP_LEVEL.has(shown.split('/')[1] ?? '') && !shown.endsWith('/updates')) {
+      this.log('←', shown, `QLab: ${String(envelope.data).slice(0, 120)}`);
     }
   }
 }

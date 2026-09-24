@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createApp } from '../src/app.js';
-import { startMockQLab } from '../tools/mock-qlab.js';
+import { startMockQLab, MOCK_WORKSPACE } from '../tools/mock-qlab.js';
 import { startMockWatchout } from '../tools/mock-watchout.js';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -45,7 +45,7 @@ test('flujo completo con QLab y WATCHOUT simulados', async (t) => {
 
   // Conexiones
   const settings = await admin('PUT', '/api/settings', {
-    qlab: { host: '127.0.0.1', port: mockQLab.port, workspace: 'Show', replyPort: 0, passcode: '4321' },
+    qlab: { host: '127.0.0.1', port: mockQLab.port, workspace: 'Magellan Demo v5 20260710', replyPort: 0, passcode: '4321' },
     watchout: { host: '127.0.0.1', port: mockWO.port },
   });
   assert.equal(settings.status, 200);
@@ -55,6 +55,7 @@ test('flujo completo con QLab y WATCHOUT simulados', async (t) => {
   await until(async () => (await admin('GET', '/api/bootstrap')).body.state.watchout.status === 'connected');
   const boot = await admin('GET', '/api/bootstrap');
   assert.equal(boot.body.state.qlab.version, '5.4.8');
+  assert.equal(boot.body.state.qlab.workspace, 'Magellan Demo v5 20260710');
   assert.ok(boot.body.state.watchout.timelines.some((tl) => tl.name === 'Cine ASTRYA'));
   assert.ok(boot.body.state.qlab.cues.some((c) => c.name === 'Intro'));
 
@@ -84,11 +85,13 @@ test('flujo completo con QLab y WATCHOUT simulados', async (t) => {
   // Lanzar
   assert.equal((await operator('POST', `/api/demos/${demoId}/launch`)).status, 200);
   await until(async () => (await operator('GET', '/api/bootstrap')).body.state.runner.states[demoId]?.state === 'running');
-  const sent = () => mockQLab.received.map((m) => m.address);
+  const ws = `/workspace/${MOCK_WORKSPACE.uniqueID}`;
+  const sent = () => mockQLab.received.map((m) => m.address.replace(ws, ''));
+  assert.ok(mockQLab.received.some((m) => m.address === `${ws}/cue/cine/start`), 'los comandos llevan el ID del workspace');
   assert.ok(sent().includes('/cue/conf/start'));
   assert.ok(sent().includes('/cue/cine/start'));
   assert.ok(mockWO.calls.includes('POST /v0/play/24'));
-  const connect = mockQLab.received.find((m) => m.address === '/workspace/Show/connect');
+  const connect = mockQLab.received.find((m) => m.address === `${ws}/connect`);
   assert.equal(connect.args[0].value, '4321');
 
   // Mando en vivo
@@ -113,4 +116,30 @@ test('flujo completo con QLab y WATCHOUT simulados', async (t) => {
   // Los datos persisten en disco y los hashes no guardan la contraseña
   const users = JSON.parse(fs.readFileSync(path.join(dataDir, 'users.json'), 'utf8'));
   assert.equal(JSON.stringify(users).includes('sala1234'), false);
+});
+
+test('QLab: con el workspace vacío usa el abierto; con un nombre que no existe avisa', async () => {
+  const { QLabClient } = await import('../src/qlab.js');
+  const mock = await startMockQLab({ port: 0, log: () => {} });
+  const logs = [];
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const client = new QLabClient({ log: (...a) => logs.push(a.join(' ')) });
+  try {
+    const replyPort = 40000 + Math.floor(Math.random() * 20000);
+    client.configure({ host: '127.0.0.1', port: mock.port, workspace: '', replyPort, passcode: '' });
+    for (let i = 0; i < 100 && !client.ready; i++) await wait(20);
+    assert.equal(client.ready, true);
+    assert.equal(client.snapshot().workspace, MOCK_WORKSPACE.displayName);
+    await client.send('/cue/20/name');
+    for (let i = 0; i < 50 && !logs.some((l) => l.includes('RESET AVB')); i++) await wait(20);
+    assert.ok(logs.some((l) => l.includes('QLab: 20 · RESET AVB')), 'las respuestas con datos aparecen en el registro');
+    assert.equal(logs.some((l) => l.includes('respondió: error')), false);
+
+    client.configure({ host: '127.0.0.1', port: mock.port, workspace: 'Otro', replyPort, passcode: '' });
+    for (let i = 0; i < 100 && client.status !== 'error'; i++) await wait(20);
+    assert.match(client.detail, /no encontrado.*Magellan/);
+  } finally {
+    client.stop();
+    mock.close();
+  }
 });

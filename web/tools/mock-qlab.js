@@ -3,6 +3,11 @@
 import dgram from 'node:dgram';
 import { encode, decode } from '../src/osc.js';
 
+// Igual que el QLab real de la sala: los comandos /cue/... sin /workspace/{id} delante
+// responden «error»; hay que usar el ID interno que devuelve /workspaces.
+export const MOCK_WORKSPACE = { uniqueID: 'A1B2C3D4-MOCK', displayName: 'Magellan Demo v5 20260710', hasPasscode: false };
+const MOCK_CUES = { 20: 'RESET AVB', 22: 'CHECK ALTAVOCES', 104: 'ENCENDIDO SALA', 103: 'APAGADO SALA' };
+
 export function startMockQLab({ port = 53000, passcode = '', log = console.log } = {}) {
   const socket = dgram.createSocket('udp4');
   const received = [];
@@ -19,6 +24,12 @@ export function startMockQLab({ port = 53000, passcode = '', log = console.log }
     const { address, args } = message;
     log(`← ${address} ${args.map((a) => a.value).join(' ')}`);
     if (address === '/udpReplyPort') { replyPorts.set(rinfo.address, args[0]?.value); return; }
+    if (address === '/workspaces') return reply(rinfo, address, [{ ...MOCK_WORKSPACE, hasPasscode: Boolean(passcode) }]);
+    const prefix = `/workspace/${MOCK_WORKSPACE.uniqueID}`;
+    if (/^\/(cue|cue_id|go|stop|panic|pause|resume)\b/.test(address)) return reply(rinfo, address, undefined, 'error');
+    if (address.startsWith('/workspace/') && !address.startsWith(prefix + '/')) return reply(rinfo, address, undefined, 'error');
+    const nameMatch = address.match(/\/cue\/(\w+)\/name$/);
+    if (nameMatch) return MOCK_CUES[nameMatch[1]] ? reply(rinfo, address, `${nameMatch[1]} · ${MOCK_CUES[nameMatch[1]]}`) : reply(rinfo, address, undefined, 'error');
     if (address.endsWith('/connect')) {
       const ok = !passcode || args[0]?.value === passcode;
       return reply(rinfo, address, ok ? 'ok:view|edit|control' : 'badpass');
