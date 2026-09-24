@@ -55,3 +55,12 @@ test('normaliza valores incorrectos', () => {
   assert.equal(demo.configurationSeconds, 600);
   assert.throws(() => importPackage(emptyConfig(), { hola: 1 }));
 });
+
+test('lee la lista de timelines con el formato real de WATCHOUT 7.8.1', async () => {
+  const { normalizeTimelines } = await import('../src/watchout.js');
+  const real = [{ name: 'AJUSTE', id: '0' }, { name: 'Curso RMS', id: '1' }, { name: 'Cine ASTRYA', id: '24' }, { name: 'Telón RMS', id: '3' }];
+  const timelines = normalizeTimelines(real);
+  assert.equal(timelines.length, 4);
+  assert.deepEqual(timelines.find((t) => t.name === 'AJUSTE'), { id: '0', name: 'AJUSTE' }, 'el ID 0 no se pierde');
+  assert.deepEqual(timelines.map((t) => t.name), ['AJUSTE', 'Cine ASTRYA', 'Curso RMS', 'Telón RMS']);
+});
