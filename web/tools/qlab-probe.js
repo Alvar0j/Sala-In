@@ -7,7 +7,12 @@ import { encode, decode } from '../src/osc.js';
 const [host, passcode = '', cue = '20'] = process.argv.slice(2);
 if (!host) { console.log('Uso: node tools/qlab-probe.js IP-DE-QLAB [passcode] [número-de-cue]'); process.exit(1); }
 
-const socket = dgram.createSocket('udp4');
+const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
+socket.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') console.log('El puerto 53001 está ocupado: para la web (Ctrl + C en su ventana) y vuelve a lanzar la prueba.');
+  else console.log(`Error: ${error.message}`);
+  process.exit(1);
+});
 const pending = [];
 socket.on('message', (data) => {
   try {
@@ -27,12 +32,11 @@ function send(address, args = []) {
   });
 }
 
-socket.bind(0, async () => {
+// Mismo puerto que usa la web (53001), que ya sabemos que recibe las respuestas.
+socket.bind(53001, async () => {
   console.log(`Probando QLab en ${host}:53000 (respuestas en el puerto ${socket.address().port})\n`);
   const pass = passcode ? [{ type: 's', value: passcode }] : [];
-  // QLab recuerda el puerto de respuesta de cada ordenador (la web usa 53001):
-  // se le indica el de esta prueba para recibir las respuestas aquí.
-  socket.send(encode({ address: '/udpReplyPort', args: [{ type: 'i', value: socket.address().port }] }), 53000, host);
+  socket.send(encode({ address: '/udpReplyPort', args: [{ type: 'i', value: 53001 }] }), 53000, host);
   await new Promise((r) => setTimeout(r, 200));
   await send('/version');
   const list = await send('/workspaces');
@@ -45,7 +49,6 @@ socket.bind(0, async () => {
   }
   await send('/connect', pass);
   await send(`/cue/${cue}/name`);
-  // Deja el puerto de respuesta como lo usa la web.
-  socket.send(encode({ address: '/udpReplyPort', args: [{ type: 'i', value: 53001 }] }), 53000, host, () => socket.close());
+  socket.close();
   console.log('\nFin. Copia todo lo anterior y pásaselo a Claude.');
 });
