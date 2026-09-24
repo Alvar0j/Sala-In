@@ -124,7 +124,9 @@ export class QLabClient extends EventEmitter {
       return;
     }
     this.later(WORKSPACES_TIMEOUT_MS, () => {
-      if (!this.workspaceId && !this.connectSent) this.connectWorkspace(this.settings.workspace, this.settings.workspace);
+      if (this.workspaceId || this.connectSent) return;
+      this.log('!', 'QLab', 'No respondió a /workspaces: se envían los comandos con el workspace escrito en Ajustes tal cual');
+      this.connectWorkspace(this.settings.workspace, this.settings.workspace);
     });
     this.later(CONNECT_TIMEOUT_MS, () => {
       if (!this.ready) this.fail(this.detail && this.status === 'error' ? this.detail : 'QLab no responde');
@@ -148,6 +150,7 @@ export class QLabClient extends EventEmitter {
       this.setStatus('error', `Workspace «${wanted}» no encontrado. Abiertos: ${names}`);
       return;
     }
+    this.log('•', 'QLab', `Workspace «${found.displayName}» (ID ${found.uniqueID})`);
     this.connectWorkspace(found.uniqueID, found.displayName ?? found.uniqueID);
   }
 
@@ -211,7 +214,7 @@ export class QLabClient extends EventEmitter {
     const message = parseCommand(command);
     message.address = this.scoped(message.address);
     this.rawSend(message);
-    this.log('→', command, 'Enviado');
+    this.log('→', command, message.address === command.trim().split(/\s/)[0] ? 'Enviado' : `Enviado como ${message.address}`);
   }
 
   refreshCues() {
