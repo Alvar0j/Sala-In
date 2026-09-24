@@ -23,15 +23,30 @@ function size(o) {
   const h = num(o.height) ?? num(o.resolution?.height) ?? num(o.size?.height) ?? num(o.resolution?.y) ?? num(o.pixelHeight);
   return w && h ? [w, h] : null;
 }
+// Busca dentro de la pantalla el primer objeto con x e y numéricos (su posición en el Stage).
+function findPosition(node, key = '', depth = 0) {
+  if (!node || typeof node !== 'object' || depth > 4) return null;
+  const preferred = ['position', 'pos', 'offset', 'translation', 'location', 'origin', 'transform', 'placement'];
+  if (depth > 0 && typeof node.x === 'number' && typeof node.y === 'number') return { x: node.x, y: node.y, z: node.z, key };
+  const keys = Object.keys(node).sort((a, b) => (preferred.includes(b) ? 1 : 0) - (preferred.includes(a) ? 1 : 0));
+  for (const k of keys) {
+    if (/resolution|size|warp|mask|edid|color/i.test(k)) continue;
+    const r = findPosition(node[k], key ? `${key}.${k}` : k, depth + 1);
+    if (r) return r;
+  }
+  return null;
+}
+
 function visit(node, path, inDisplays) {
   if (Array.isArray(node)) return node.forEach((n, i) => visit(n, `${path}[${i}]`, inDisplays));
   if (!node || typeof node !== 'object') return;
   const here = inDisplays || /display|output|screen|projector/i.test(path.split('.').pop() ?? '');
   const s = size(node);
   if (here && s) {
-    const pos = node.position ?? node.transform?.position ?? node.offset ?? {};
-    found.push({ path, name: node.name ?? node.displayName ?? node.label ?? '', w: s[0], h: s[1], x: pos.x, y: pos.y, z: pos.z });
+    const pos = findPosition(node);
+    found.push({ path, raw: node, name: node.name ?? node.displayName ?? node.label ?? '', w: s[0], h: s[1], x: pos?.x, y: pos?.y, z: pos?.z, posKey: pos?.key });
   }
+  if (here && s) return; // no volver a contar su resolución como otra pantalla
   for (const [key, value] of Object.entries(node)) visit(value, path ? `${path}.${key}` : key, here);
 }
 visit(show, '', false);
@@ -45,4 +60,7 @@ for (const d of found) {
   const pos = [d.x, d.y, d.z].some((v) => v !== undefined) ? `  posición x=${d.x ?? '-'} y=${d.y ?? '-'}${d.z !== undefined ? ` z=${d.z}` : ''}` : '';
   console.log(`  ${(d.name || '(sin nombre)').padEnd(28)} ${String(d.w).padStart(5)} × ${String(d.h).padEnd(5)}${pos}`);
 }
-console.log('\nShow completo guardado en watchout-show.json. Copia la lista anterior y pásasela a Claude.');
+const sample = JSON.stringify(found[0].raw, (k, v) => (Array.isArray(v) && v.length > 8 ? `[${v.length} elementos]` : v), 2);
+console.log(`\nPosición leída de: ${found[0].posKey ?? '(no encontrada)'}`);
+console.log(`\nAsí está guardada «${found[0].name}» (resumen):\n${sample.split('\n').slice(0, 80).join('\n')}`);
+console.log('\nShow completo guardado en watchout-show.json. Copia todo lo anterior y pásaselo a Claude.');
