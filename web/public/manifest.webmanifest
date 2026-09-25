@@ -1,0 +1,9 @@
+{
+  "name": "Sala-In",
+  "short_name": "Sala-In",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0E1117",
+  "theme_color": "#0E1117",
+  "icons": [{ "src": "img/icon.png", "sizes": "1024x1024", "type": "image/png" }]
+}

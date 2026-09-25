@@ -1,42 +1,108 @@
-# QLab Remote Cues
+<p align="center">
+  <img src="web/public/img/icon.png" width="96" alt="Sala-In">
+</p>
 
-Aplicación nativa iOS/iPadOS para controlar QLab 5 mediante OSC sobre UDP.
+<h1 align="center">Sala-In</h1>
 
-## Puesta en marcha
+<p align="center">
+  <strong>La sala inmersiva, desde el móvil.</strong><br>
+  Lanza demos, presenta Keynote en las cuatro paredes y controla QLab y WATCHOUT<br>
+  sin tocar el ordenador de show: basta con estar en la Wi‑Fi de la sala.
+</p>
 
-1. Abre `QLabRemoteCues.xcodeproj`.
-2. Selecciona tu equipo de firma y un iPhone/iPad con iOS 17 o posterior.
-3. En QLab activa **Workspace Settings → Network → OSC Access**.
-4. Crea un perfil con IP, puerto (53000 por defecto), nombre/ID del workspace y passcode.
-5. Acepta el permiso de red local la primera vez.
+<p align="center">
+  <img alt="Node.js 20+" src="https://img.shields.io/badge/Node.js-20%2B-3C873A?logo=node.js&logoColor=white">
+  <img alt="Sin dependencias" src="https://img.shields.io/badge/dependencias-0-2EB872">
+  <img alt="QLab 5" src="https://img.shields.io/badge/QLab%205-OSC%2FUDP-8E5CF7">
+  <img alt="WATCHOUT 7" src="https://img.shields.io/badge/WATCHOUT%207-HTTP%20API-F0A020">
+  <img alt="Keynote" src="https://img.shields.io/badge/Keynote-NDI-3478F6?logo=apple&logoColor=white">
+</p>
 
-No se usan dependencias de terceros. El passcode se guarda en Keychain y las configuraciones permanecen en el dispositivo.
+<p align="center">
+  <img src="docs/img/demos.jpg" width="230" alt="Lista de demos">
+  &nbsp;
+  <img src="docs/img/presentacion.jpg" width="230" alt="Mando de diapositivas">
+  &nbsp;
+  <img src="docs/img/mando.jpg" width="230" alt="Mando de una demo en curso">
+</p>
 
-## Flujo de demos
+---
 
-La pestaña **Demos** permite preparar una experiencia completa sin que el operador tenga que conocer OSC:
+## Qué es
 
-1. Crea una demo con `+`.
-2. Añade pasos a **Preparación**, **Lanzamiento** y **Finalización**.
-3. Configura cada dirección OSC exactamente como deba enviarse.
-4. Añade esperas, confirmaciones o instrucciones entre comandos.
-5. Añade controles opcionales que estarán disponibles mientras se presenta la demo.
-6. Usa **Preparar**, **Lanzar demo** y **Finalizar** desde la pantalla operativa.
+Sala-In es un servidor pequeño que vive en el Mac mini de la sala. Mantiene **una sola conexión** con QLab
+y con WATCHOUT en nombre de todos, y publica una web que cualquier persona con usuario abre desde su móvil
+o tablet. Nadie tiene que configurar IPs, passcodes ni workspaces: entra, elige la demo y la lanza.
 
-La configuración completa se puede compartir como `QLab-Remote-Cues.qlabremote.json`. Incluye demos, paneles y perfiles de conexión, pero nunca los passcodes almacenados en Keychain.
+```mermaid
+flowchart LR
+    subgraph WIFI["Wi‑Fi de la sala"]
+        M1["📱 Móvil"]
+        M2["📱 Tablet"]
+    end
+    subgraph MAC["🖥️ Mac mini"]
+        W["Sala-In<br/>(web + servidor)"]
+        Q["QLab 5"]
+        K["Keynote"]
+    end
+    WO["🎞️ WATCHOUT 7<br/>Director · WO-SUELO"]
+    P["🧱 4 paredes + suelo"]
 
-## Servidor simulado
-
-Desde Terminal:
-
-```sh
-swift run MockQLabServer
+    M1 & M2 -- "HTTP :8080" --> W
+    W -- "OSC / UDP" --> Q
+    W -- "AppleScript" --> K
+    W -- "HTTP :3019" --> WO
+    K -- "NDI" --> WO
+    WO --> P
 ```
 
-El mock escucha UDP 53000 y devuelve una versión y una lista mínima de cues. Para recibir sus respuestas en el listener separado de la app puede ser necesario adaptar el mock al puerto de respuesta del dispositivo; está pensado principalmente para inspección local y pruebas de codec.
+## Qué puede hacer
 
-## Limitaciones conocidas
+| | |
+|---|---|
+| ✨ **Demos** | Un botón lanza la demo completa: configura la sala con cuenta atrás, ejecuta la preparación y el lanzamiento, y activa su mando. Solo hay una demo en curso: si lanzas otra, **la anterior se finaliza sola**. |
+| 🖥️ **Presentaciones** | Sube un Keynote o PowerPoint desde el móvil y preséntalo en las cuatro paredes, con animaciones. Mando de diapositivas en el móvil y con las flechas del teclado. |
+| 🎞️ **WATCHOUT 7** | Reproduce, pausa o para cualquier timeline. La web lee la lista de timelines para elegirlos por nombre. |
+| 🎚️ **QLab 5** | Cualquier comando OSC, con argumentos (`/cue/1/sliderLevel 0 -10`). |
+| ✏️ **Editor** | Crea y edita demos en el navegador: comandos, esperas, confirmaciones e instrucciones para el operador, y botones de mando con icono y color. |
+| ✳️ **Constellation, Check y ON/OFF** | Los mismos controles que la app de iPad: presets de Constellation, check de altavoces, reset AVB y encendido de sala. |
+| 👥 **Usuarios** | Tres roles: *operador* (lanza), *editor* (crea demos y sube archivos) y *admin* (ajustes y usuarios). |
+| 📡 **Tiempo real** | Todos los móviles ven lo mismo al instante: qué demo está en curso, la cuenta atrás, la diapositiva actual. Todo queda en el registro con el nombre de quien lo hizo. |
 
-- La lista usa `/cueLists/shallow`, ya que la documentación de QLab advierte que listas anidadas completas pueden superar el máximo de un datagrama UDP. Una versión futura puede añadir OSC/TCP con framing SLIP.
-- Bonjour está encapsulado y usa `_qlab._tcp`; la detección puede depender de la versión/configuración de QLab. La conexión manual siempre está disponible.
-- Las rutas están centralizadas en `Services/QLabOSCPath.swift` y apuntan a QLab 5.
+<p align="center">
+  <img src="docs/img/tablet.jpg" width="720" alt="Sala-In en una tablet">
+</p>
+
+## Empezar
+
+**Probarla en cualquier ordenador**, con QLab y WATCHOUT simulados y demos de ejemplo:
+
+```sh
+cd web
+npm run demo          # → http://localhost:8080 · admin / demo1234
+```
+
+**Instalarla en el Mac mini de la sala**: guía paso a paso en **[web/README.md](web/README.md)**.
+
+## Estructura del repositorio
+
+```
+Sala-In/
+├── web/                  Sala-In: servidor Node.js y web (la parte principal)
+│   ├── src/              servidor: QLab, WATCHOUT, Keynote, demos, usuarios
+│   ├── public/           la web que se abre en el móvil
+│   ├── tools/            modo demostración y simuladores de QLab y WATCHOUT
+│   ├── test/             pruebas automáticas (npm test)
+│   └── deploy/           arranque automático en el Mac
+├── QLabRemoteCues/       app nativa para iPad e iPhone (SwiftUI)
+├── Tools/                simulador de QLab en Swift
+└── docs/                 capturas y documentación de la app
+```
+
+## Documentación
+
+- 📘 **[Guía de la web](web/README.md)**: instalación, configuración, presentaciones, solución de problemas.
+- 📱 **[App para iPad e iPhone](docs/app-ios.md)**: la app nativa QLab Remote Cues, que comparte el formato de
+  configuración con la web.
+
+<p align="center"><sub>RMS Pro Audio · Sala inmersiva</sub></p>
