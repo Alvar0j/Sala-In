@@ -4,6 +4,8 @@
 #   bash ~/Sala-In/web/tools/arrancar-sala.sh                  # arrancar
 #   bash ~/Sala-In/web/tools/arrancar-sala.sh --parar          # parar (no toca QLab)
 #   bash ~/Sala-In/web/tools/arrancar-sala.sh --acceso-directo # icono en el Escritorio
+#   bash ~/Sala-In/web/tools/arrancar-sala.sh --instalar-inicio # arrancar solo al iniciar sesión
+#   bash ~/Sala-In/web/tools/arrancar-sala.sh --quitar-inicio   # dejar de arrancar solo
 #
 # Orden: pantalla virtual (BetterDisplay) → OBS con la salida NDI → web Sala-In →
 # Keynote preparado → evitar reposo → comprobación final.
@@ -35,6 +37,54 @@ betterdisplay() {
 }
 
 # ---------------------------------------------------------------------------------------------
+AGENTE="$HOME/Library/LaunchAgents/es.rmsproaudio.salain.arranque.plist"
+if [ "$1" = "--instalar-inicio" ]; then
+  mkdir -p "$HOME/Library/LaunchAgents"
+  # launchd arranca con un PATH mínimo: se añaden las rutas donde suelen estar node y brew.
+  cat > "$AGENTE" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>es.rmsproaudio.salain.arranque</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>$WEB_DIR/tools/arrancar-sala.sh</string>
+    <string>--al-iniciar</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>StandardOutPath</key><string>$LOG_DIR/arranque.log</string>
+  <key>StandardErrorPath</key><string>$LOG_DIR/arranque.log</string>
+</dict>
+</plist>
+PLIST
+  launchctl bootout "gui/$(id -u)" "$AGENTE" >/dev/null 2>&1
+  launchctl bootstrap "gui/$(id -u)" "$AGENTE" 2>/dev/null || launchctl load "$AGENTE"
+  echo "Listo: se arrancará solo cada vez que este usuario inicie sesión."
+  echo "Registro de cada arranque: $LOG_DIR/arranque.log"
+  echo
+  echo "IMPORTANTE para que funcione tras un reinicio sin nadie delante:"
+  echo "  Ajustes del Sistema → Usuarios y grupos → «Iniciar sesión automáticamente como» → $(whoami)"
+  echo "  (si FileVault está activado, macOS no permite el inicio de sesión automático)."
+  exit 0
+fi
+if [ "$1" = "--quitar-inicio" ]; then
+  launchctl bootout "gui/$(id -u)" "$AGENTE" >/dev/null 2>&1 || launchctl unload "$AGENTE" >/dev/null 2>&1
+  rm -f "$AGENTE"
+  echo "Quitado: ya no se arrancará solo al iniciar sesión."
+  exit 0
+fi
+if [ "$1" = "--al-iniciar" ]; then
+  # Recién iniciada la sesión, el escritorio, la red y BetterDisplay tardan en estar listos.
+  echo "=== Arranque automático $(date) ==="
+  sleep 30
+fi
+
 if [ "$1" = "--acceso-directo" ]; then
   DESTINO="$HOME/Desktop/Arrancar Sala-In.command"
   printf '#!/bin/bash\nbash "%s"\necho\nread -n 1 -s -r -p "Pulsa una tecla para cerrar esta ventana…"\n' "$WEB_DIR/tools/arrancar-sala.sh" > "$DESTINO"

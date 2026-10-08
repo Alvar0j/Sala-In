@@ -166,6 +166,13 @@ Monitor de Actividad mientras QLab suena.
 
 ## 6. Arranque automático
 
+**Recomendado (todo junto):** `bash web/tools/arrancar-sala.sh --instalar-inicio`. Al iniciar sesión conecta la
+pantalla virtual, abre OBS con la salida NDI, arranca la web, prepara Keynote y evita el reposo. Necesita el
+*inicio de sesión automático* activado (Ajustes del Sistema → Usuarios y grupos). Se quita con `--quitar-inicio`.
+`--acceso-directo` crea en el Escritorio los iconos «Arrancar Sala-In» y «Parar Sala-In».
+
+**Solo la web:**
+
 Para que la web arranque al encender el Mac y se reinicie si se cierra:
 
 1. Abre `deploy/es.rmsproaudio.salain.plist` y cambia `RUTA_AL_REPO` por la carpeta del proyecto
