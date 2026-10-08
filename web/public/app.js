@@ -224,7 +224,8 @@ function statusPill(label, snapshot) {
 
 function topbar() {
   return h('header', { class: 'topbar' },
-    h('a', { class: 'brand', href: '#/demos' }, h('img', { src: 'img/icon.png', alt: '' }), 'Sala-In'),
+    h('a', { class: 'brand', href: '#/demos' }, h('img', { src: 'img/icon.png', alt: '' }), h('span', { class: 'brand-name' }, 'Sala-In'),
+      h('img', { class: 'company', src: 'img/rms-proaudio.png', alt: 'RMS ProAudio' })),
     statusPill('QLab', store.state?.qlab),
     statusPill('WO', store.state?.watchout),
     store.state?.constellation?.host ? statusPill('CST', store.state?.constellation) : null,

@@ -39,6 +39,8 @@ p { margin: 0; }
 }
 .topbar .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; margin-right: auto; text-decoration: none; }
 .topbar .brand img { width: 28px; height: 28px; border-radius: 7px; }
+.topbar .brand img.company { width: auto; height: 26px; border-radius: 0; margin-left: 6px; padding-left: 12px; border-left: 1px solid var(--border); box-sizing: content-box; }
+@media (max-width: 430px) { .topbar .brand img.company { height: 20px; padding-left: 8px; margin-left: 2px; } }
 .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: .78rem; white-space: nowrap; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
 .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--danger); }
@@ -150,7 +152,8 @@ label.check { display: flex; gap: 10px; align-items: center; font-size: .92rem; 
 table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
 
-@media (max-width: 360px) { .topbar .pill .label { display: none; } }
+@media (max-width: 360px) { .topbar .brand-name { display: none; } }
+@media (max-width: 430px) { .topbar .pill .label { display: none; } .topbar .pill { padding: 6px 8px; } .topbar { gap: 8px; } }
 @media (max-width: 520px) {
   .grid { grid-template-columns: repeat(2, 1fr); }
 }
