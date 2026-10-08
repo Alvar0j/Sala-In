@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS = {
   qlab: { host: '', port: 53000, workspace: '', replyPort: 53001, passcode: '' },
   watchout: { host: '', port: 3019 },
   constellation: { host: '', port: 8080 },
+  room: { wifiName: '' },
   presentation: { driver: process.platform === 'darwin' ? 'keynote' : 'simulado', watchoutTimelineId: '' },
 };
 
@@ -21,6 +22,7 @@ export class Store {
       qlab: { ...DEFAULT_SETTINGS.qlab, ...settings.qlab },
       watchout: { ...DEFAULT_SETTINGS.watchout, ...settings.watchout },
       constellation: { ...DEFAULT_SETTINGS.constellation, ...settings.constellation },
+      room: { ...DEFAULT_SETTINGS.room, ...settings.room },
       presentation: { ...DEFAULT_SETTINGS.presentation, ...settings.presentation },
     };
     this.users = this.read('users.json', []);

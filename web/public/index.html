@@ -15,8 +15,12 @@
 </head>
 <body>
   <div id="app">
-    <p class="boot">Cargando…</p>
+    <div class="splash">
+      <div class="splash-logos"><img src="img/icon.png" alt="Sala-In"><span class="splash-sep"></span><img class="rms" src="img/rms-proaudio.png" alt="RMS ProAudio"></div>
+      <div class="splash-spinner" aria-label="Cargando"></div>
+    </div>
   </div>
+  <div id="offline-root"></div>
   <div id="modal-root"></div>
   <div id="toast-root" aria-live="polite"></div>
   <script type="module" src="app.js"></script>

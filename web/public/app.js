@@ -23,11 +23,18 @@ function h(tag, attrs = {}, ...children) {
 }
 
 async function api(method, path, body) {
-  const response = await fetch(path, {
-    method, credentials: 'same-origin',
-    headers: body !== undefined || method !== 'GET' ? { 'Content-Type': 'application/json' } : {},
-    body: body !== undefined ? JSON.stringify(body) : method !== 'GET' ? '{}' : undefined,
-  });
+  let response;
+  try {
+    response = await fetch(path, {
+      method, credentials: 'same-origin',
+      headers: body !== undefined || method !== 'GET' ? { 'Content-Type': 'application/json' } : {},
+      body: body !== undefined ? JSON.stringify(body) : method !== 'GET' ? '{}' : undefined,
+    });
+  } catch {
+    // fetch solo falla así cuando no llega al servidor (otra Wi-Fi, Mac apagado…).
+    checkConnection();
+    throw Object.assign(new Error('Sin conexión con la sala.'), { network: true });
+  }
   const data = await response.json().catch(() => ({}));
   if (response.status === 401 && path !== '/api/login') { store.user = null; render(); }
   if (!response.ok) throw new Error(data.error ?? `Error ${response.status}`);
@@ -118,13 +125,98 @@ const testMode = () => Boolean(store.state?.testMode);
 const qlabReady = () => store.state?.qlab.ready || testMode();
 
 async function boot() {
-  const session = await api('GET', '/api/session').catch(() => ({ user: null, needsSetup: false }));
-  store.user = session.user;
-  store.needsSetup = session.needsSetup;
-  if (store.user) await loadAll();
+  try {
+    const session = await api('GET', '/api/session');
+    saveWifiName(session.wifiName);
+    store.user = session.user;
+    store.needsSetup = session.needsSetup;
+    if (store.user) await loadAll();
+  } catch (error) {
+    if (error.network) return goOffline();
+    store.user = null;
+  }
   store.ready = true;
   render();
 }
+
+// --- sin conexión: aviso para conectarse a la Wi-Fi de la sala ------------------------
+// La web vive en el Mac de la sala; fuera de su red no se puede cargar. Si ya estaba
+// abierta (o guardada en la pantalla de inicio), se muestra este aviso y se reintenta solo.
+const WIFI_KEY = 'salain.wifiName';
+let offline = false;
+let retryTimer = null;
+let checking = null;
+let online = 0; // sube cada vez que se recupera la conexión; invalida comprobaciones antiguas
+
+function savedWifiName() { try { return localStorage.getItem(WIFI_KEY) ?? ''; } catch { return ''; } }
+function saveWifiName(name) {
+  if (typeof name !== 'string') return;
+  try { if (name) localStorage.setItem(WIFI_KEY, name); else localStorage.removeItem(WIFI_KEY); } catch {}
+}
+
+async function reachable() {
+  try {
+    const response = await fetch('/api/session', { cache: 'no-store', credentials: 'same-origin', signal: AbortSignal.timeout(4000) });
+    return response.status < 500;
+  } catch { return false; }
+}
+
+/** Comprueba si el servidor responde; si no, muestra el aviso. */
+function checkConnection() {
+  if (offline || checking) return checking;
+  const started = online;
+  checking = reachable().then((ok) => { checking = null; if (!ok && started === online) goOffline(); return ok; });
+  return checking;
+}
+
+function goOffline() {
+  if (!offline) { offline = true; events?.close(); }
+  renderOffline();
+  clearTimeout(retryTimer);
+  retryTimer = setTimeout(() => retryConnection(), 3000);
+}
+
+let retrying = null;
+function retryConnection(manual = false) {
+  // El evento «online», el temporizador y el botón pueden coincidir: un solo intento a la vez.
+  retrying ??= (async () => {
+    clearTimeout(retryTimer);
+    if (manual) renderOffline(true);
+    if (!await reachable()) { goOffline(); return; }
+    offline = false;
+    online += 1;
+    document.getElementById('offline-root').replaceChildren();
+    await boot();
+  })().finally(() => { retrying = null; });
+  return retrying;
+}
+
+function brandLogos() {
+  return h('div', { class: 'splash-logos' }, h('img', { src: 'img/icon.png', alt: 'Sala-In' }), h('span', { class: 'splash-sep' }),
+    h('img', { class: 'rms', src: 'img/rms-proaudio.png', alt: 'RMS ProAudio' }));
+}
+
+function renderOffline(retrying = false) {
+  const wifi = savedWifiName();
+  document.getElementById('offline-root').replaceChildren(h('div', { class: 'offline', role: 'alertdialog', 'aria-live': 'assertive' },
+    h('div', { class: 'splash' },
+      brandLogos(),
+      h('div', { class: 'wifi-icon', 'aria-hidden': 'true' }, h('span'), h('span'), h('span'), h('span')),
+      h('h1', {}, 'Conéctate a la Wi-Fi de la sala'),
+      wifi ? h('p', { class: 'wifi-name' }, '📶 ', wifi) : null,
+      h('p', { class: 'muted' }, 'La web de Sala-In solo funciona dentro de la red de la sala inmersiva. En cuanto te conectes, esta pantalla desaparece sola.'),
+      h('div', { class: 'row', style: { justifyContent: 'center' } },
+        h('span', { class: 'small muted retrying' }, h('span', { class: 'dot warn' }), retrying ? 'Comprobando…' : 'Reintentando cada pocos segundos'),
+        h('button', { class: 'small', onclick: () => retryConnection(true) }, 'Reintentar ahora')))));
+}
+
+window.addEventListener('offline', () => goOffline());
+window.addEventListener('online', () => { if (offline) retryConnection(); });
+document.addEventListener('visibilitychange', () => {
+  // Al volver a la web (p. ej. tras cambiar de Wi-Fi en el móvil) se comprueba enseguida.
+  if (document.visibilityState !== 'visible') return;
+  if (offline) retryConnection(); else if (store.ready) checkConnection();
+});
 
 async function loadAll() {
   const data = await api('GET', '/api/bootstrap');
@@ -144,7 +236,11 @@ function connectEvents() {
   events.addEventListener('config', (e) => { store.config = JSON.parse(e.data); refresh(true); });
   events.addEventListener('files', (e) => { store.files = JSON.parse(e.data); if (['files', 'demos'].includes(currentView().name)) refresh(); });
   events.addEventListener('log', (e) => { store.log.unshift(JSON.parse(e.data)); store.log.length = Math.min(store.log.length, 300); if (currentView().name === 'log') refresh(); });
-  events.onerror = () => { if (!store.user) events.close(); };
+  events.onerror = () => {
+    if (!store.user) { events.close(); return; }
+    // EventSource reintenta solo; si el servidor tampoco responde a una petición normal, no hay red.
+    setTimeout(() => { if (events?.readyState !== EventSource.OPEN) checkConnection(); }, 1500);
+  };
 }
 
 // --- router ---------------------------------------------------------------------
@@ -159,7 +255,7 @@ let draft = null; // copia de trabajo del editor abierto (no se pisa con los eve
 function render() {
   const app = document.getElementById('app');
   app.innerHTML = '';
-  if (!store.ready) return app.append(h('p', { class: 'boot' }, 'Cargando…'));
+  if (!store.ready) return app.append(h('div', { class: 'splash' }, brandLogos(), h('div', { class: 'splash-spinner', 'aria-label': 'Cargando' })));
   if (!store.user) return app.append(store.needsSetup ? setupView() : loginView());
   app.append(topbar(), h('main', { id: 'main' }, activeBanner(), viewContent()), tabs());
   renderPrompt();
@@ -1055,6 +1151,7 @@ function settingsView() {
   return h('section', { id: 'settings' },
     h('h1', {}, 'Ajustes'),
     testModeCard(),
+    wifiCard(d),
     h('div', { class: 'card' },
       h('div', { class: 'section-head' }, h('h2', {}, 'QLab (OSC por UDP)'), h('button', { class: 'small', onclick: () => run(() => api('POST', '/api/qlab/reconnect'), 'Reconectando…') }, 'Reconectar')),
       status(q, 'qlab-status'),
@@ -1077,6 +1174,19 @@ function settingsView() {
     presentationSettingsCard(d),
     usersCard(d),
     importExportCard());
+}
+
+function wifiCard(d) {
+  d.room ??= { wifiName: '', ...store.settings?.room };
+  const save = async () => {
+    const result = await run(() => api('PUT', '/api/settings', { room: d.room }), 'Wi-Fi guardada');
+    if (result) { store.settings = result; saveWifiName(result.room?.wifiName ?? ''); }
+  };
+  return h('div', { class: 'card' },
+    h('h2', {}, '📶 Wi-Fi de la sala'),
+    h('p', { class: 'small muted' }, 'Nombre de la red que verá quien abra la web desde otra Wi-Fi, en la pantalla «Conéctate a la Wi-Fi de la sala». No pongas la contraseña.'),
+    h('div', { class: 'row' }, h('input', { value: d.room.wifiName ?? '', placeholder: 'p. ej. Magellan', style: { flex: '1' }, oninput: (e) => { d.room.wifiName = e.target.value; } }),
+      h('button', { class: 'primary small', onclick: save }, 'Guardar')));
 }
 
 function testModeCard() {

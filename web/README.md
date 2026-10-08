@@ -212,6 +212,13 @@ El registro de la web queda en `/tmp/salain.log`. Para pararla:
 > [!TIP]
 > Da al Mac mini una **IP fija** (o una reserva DHCP en el router) para que la dirección de la web no cambie.
 
+### Aviso «Conéctate a la Wi-Fi de la sala»
+
+En **Ajustes → Wi-Fi de la sala** escribe el nombre de la red (sin la contraseña). Si alguien tiene la web
+abierta, o guardada en la pantalla de inicio, y se sale de esa Wi-Fi, ve una pantalla con los logos y ese
+nombre. Desaparece sola en cuanto vuelve a la red. Si abre la dirección por primera vez desde otra red, el
+navegador no llega al Mac y muestra su propio error: eso solo se evitaría sirviendo la web por HTTPS.
+
 ### Modo prueba (desconectar todo)
 
 En **Ajustes → Conexiones con los equipos** hay un interruptor que corta QLab, WATCHOUT, Constellation y Keynote

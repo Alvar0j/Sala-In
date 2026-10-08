@@ -86,6 +86,7 @@ export function createApp({
     watchout: store.settings.watchout,
     constellation: store.settings.constellation,
     presentation: store.settings.presentation,
+    room: store.settings.room,
   });
 
   presenter.configure(store.settings.presentation);
@@ -101,7 +102,8 @@ export function createApp({
     routes.push({ method, regex, keys, role, handler, ...options });
   };
 
-  route('GET', '/api/session', null, ({ user }) => ({ user: auth.publicUser(user), needsSetup: auth.needsSetup() }));
+  // El nombre de la Wi-Fi es público: el navegador lo guarda para el aviso de «sin conexión».
+  route('GET', '/api/session', null, ({ user }) => ({ user: auth.publicUser(user), needsSetup: auth.needsSetup(), wifiName: store.settings.room.wifiName }));
 
   route('POST', '/api/setup', null, ({ body, res }) => {
     if (!auth.needsSetup()) throw new HttpError(409, 'La web ya está configurada.');
@@ -299,6 +301,7 @@ export function createApp({
       if (next.qlab.workspace.includes('/')) throw new HttpError(400, 'El workspace no puede contener «/».');
     }
     if (body.watchout) next.watchout = { host: String(body.watchout.host ?? '').trim(), port: port(body.watchout.port, 3019) };
+    if (body.room) next.room = { wifiName: String(body.room.wifiName ?? '').trim().slice(0, 64) };
     if (body.constellation) next.constellation = { host: String(body.constellation.host ?? '').trim(), port: port(body.constellation.port, 8080) };
     if (body.presentation) {
       const driver = ['keynote', 'simulado'].includes(body.presentation.driver) ? body.presentation.driver : next.presentation.driver;

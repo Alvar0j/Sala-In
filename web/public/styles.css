@@ -28,7 +28,6 @@ p { margin: 0; }
 .muted { color: var(--muted); }
 .small { font-size: .85rem; }
 .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .85rem; }
-.boot { padding: 40px 16px; text-align: center; color: var(--muted); }
 .hidden { display: none !important; }
 
 /* Estructura */
@@ -202,3 +201,26 @@ td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--bord
 /* Emoji y color de los botones */
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; background: var(--tint); color: #fff; font-weight: 600; margin-left: 6px; }
 .emoji-input { width: 64px; text-align: center; font-size: 1.3rem; padding: 4px; }
+
+/* Pantalla de carga y aviso de «sin conexión» */
+.splash { min-height: 100vh; min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 18px; padding: 24px 20px; text-align: center; }
+.splash-logos { display: flex; align-items: center; gap: 18px; }
+.splash-logos img { height: 64px; width: auto; border-radius: 14px; }
+.splash-logos img.rms { height: 48px; border-radius: 0; }
+.splash-sep { width: 1px; height: 48px; background: var(--border); }
+.splash-spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--surface-2); border-top-color: var(--accent); animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.offline { position: fixed; inset: 0; z-index: 100; background: radial-gradient(circle at 50% 30%, #18213A, var(--bg) 70%); overflow-y: auto; }
+.offline .splash { max-width: 520px; margin: 0 auto; }
+.offline h1 { font-size: 1.5rem; }
+.wifi-name { font-size: 1.3rem; font-weight: 700; padding: 8px 18px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); }
+.wifi-icon { position: relative; width: 84px; height: 64px; }
+.wifi-icon span { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); border-radius: 50%; border: 6px solid transparent; border-top-color: var(--accent); animation: wifi 1.8s ease-in-out infinite; }
+.wifi-icon span:nth-child(1) { width: 12px; height: 12px; border: none; background: var(--accent); bottom: 2px; animation-delay: 0s; }
+.wifi-icon span:nth-child(2) { width: 40px; height: 40px; bottom: -12px; animation-delay: .2s; }
+.wifi-icon span:nth-child(3) { width: 64px; height: 64px; bottom: -24px; animation-delay: .4s; }
+.wifi-icon span:nth-child(4) { width: 88px; height: 88px; bottom: -36px; animation-delay: .6s; }
+@keyframes wifi { 0%, 100% { opacity: .25; } 40% { opacity: 1; } }
+.retrying { display: inline-flex; align-items: center; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { .splash-spinner, .wifi-icon span { animation: none; } }
+@media (max-width: 400px) { .splash-logos img { height: 52px; } .splash-logos img.rms { height: 38px; } }
