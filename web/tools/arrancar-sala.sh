@@ -60,6 +60,8 @@ if [ "$1" = "--instalar-inicio" ]; then
     <key>PATH</key><string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
   <key>RunAtLoad</key><true/>
+  <!-- Sin esto, launchd cierra la web (node) y caffeinate en cuanto el script termina. -->
+  <key>AbandonProcessGroup</key><true/>
   <key>StandardOutPath</key><string>$LOG_DIR/arranque.log</string>
   <key>StandardErrorPath</key><string>$LOG_DIR/arranque.log</string>
 </dict>
