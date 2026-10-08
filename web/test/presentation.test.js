@@ -130,3 +130,19 @@ test('un .zip con un paquete .key se descomprime y se reproduce el .key', { skip
   assert.match(store.get(file.id).playPath, /Charla\.key$/);
   fs.rmSync(work, { recursive: true, force: true });
 });
+
+test('las presentaciones se encuentran aunque la carpeta de datos se copie a otro Mac', async () => {
+  const { FileStore } = await import('../src/files.js');
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'salain-move-'));
+  fs.mkdirSync(path.join(dataDir, 'files', 'F1', 'contenido', 'Charla.key'), { recursive: true });
+  fs.writeFileSync(path.join(dataDir, 'files', 'F1', 'charla.zip'), 'x');
+  fs.writeFileSync(path.join(dataDir, 'files.json'), JSON.stringify([{
+    id: 'F1', name: 'charla.zip', size: 1, kind: 'keynote',
+    path: '/Users/pruebaprueba/Sala-In/web/data/files/F1/charla.zip',
+    playPath: '/Users/pruebaprueba/Sala-In/web/data/files/F1/contenido/Charla.key',
+  }]));
+  const store = new FileStore(dataDir);
+  assert.equal(store.get('F1').playPath, path.join(dataDir, 'files', 'F1', 'contenido', 'Charla.key'));
+  assert.equal(store.get('F1').path, path.join(dataDir, 'files', 'F1', 'charla.zip'));
+  fs.rmSync(dataDir, { recursive: true, force: true });
+});

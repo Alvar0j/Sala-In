@@ -18,7 +18,23 @@ export class FileStore {
   }
 
   list() { return this.files.map(publicFile); }
-  get(id) { return this.files.find((f) => f.id === id) ?? null; }
+  get(id) {
+    const file = this.files.find((f) => f.id === id);
+    return file ? { ...file, path: this.locate(file, file.path), playPath: this.locate(file, file.playPath ?? file.path) } : null;
+  }
+
+  /**
+   * Las rutas se guardan completas, pero la carpeta de datos puede haberse copiado a
+   * otro Mac (p. ej. del portátil al Mac mini). Si la ruta ya no existe, se busca el
+   * mismo archivo dentro de files/<id>/ de esta carpeta de datos.
+   */
+  locate(file, stored) {
+    if (!stored || fs.existsSync(stored)) return stored;
+    const marker = `${path.sep}files${path.sep}${file.id}${path.sep}`;
+    const at = stored.replace(/[\\/]/g, path.sep).lastIndexOf(marker);
+    const relative = at >= 0 ? stored.slice(at + marker.length) : path.basename(stored);
+    return path.join(this.dir, file.id, relative);
+  }
 
   save() {
     const temp = `${this.index}.tmp`;
