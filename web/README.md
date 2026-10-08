@@ -115,7 +115,7 @@ curl -s "http://10.1.1.25:8080/cmd?print_default/cuelists"   # listas de cues (O
 En Ajustes → **Constellation**: IP `10.1.1.25` (red AVB, la del Mac mini en `en12`) y puerto `8080`. Al
 guardar aparecen:
 
-- en la pestaña **Constellation**, botones con todos los presets (On/Off, Acoustic Presets, Length…);
+- en la pestaña **Constellation**, botones con los **Acoustic Presets**;
 - en el editor de demos, el paso **Constellation: preset acústico**, con un desplegable de presets. Lo
   normal es *On* + preset al lanzar, y *None* + *Off* en la Finalización.
 

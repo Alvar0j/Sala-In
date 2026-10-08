@@ -809,20 +809,20 @@ function constellationView() {
 function nadiaPresets() {
   const snapshot = store.state?.constellation;
   if (!snapshot || snapshot.status === 'disabled') return null;
-  const groups = constellationGroups();
+  // En la pestaña solo se muestran los Acoustic Presets; el resto sigue disponible en el editor de demos.
+  const groups = constellationGroups().filter((g) => /acoustic preset/i.test(g.name));
   const recall = async (group, cue) => {
     if (group.confirm && !await confirmDialog(`¿Poner «${cue.name}»?`, `Constellation · ${group.name}. Cambia la acústica de la sala.`, { ok: 'Aplicar' })) return;
     run(() => api('POST', `/api/nadia/recall/${cue.id}`), `${cue.name} aplicado`);
   };
   return [
-    h('div', { class: 'section-head' }, h('h2', {}, 'Presets del sistema'), statusLine(snapshot, 'constellation-status')),
+    h('div', { class: 'section-head' }, h('h2', {}, 'Acoustic Presets'), statusLine(snapshot, 'constellation-status')),
     groups.length ? groups.map((group) => [
-      h('h3', { class: 'small muted' }, group.name),
       h('div', { class: 'grid' }, group.cues.map((cue) => h('button', {
         class: 'big-button', style: { '--tint': /off|none/i.test(cue.name) ? '#6B7280' : '#18B4C9' },
         disabled: snapshot.status !== 'connected', title: `Cue ${cue.id}`, onclick: () => recall(group, cue),
       }, cue.name))),
-    ]) : h('div', { class: 'empty' }, snapshot.status === 'connected' ? 'El NADIA no tiene presets visibles.' : 'Esperando a Constellation…'),
+    ]) : h('div', { class: 'empty' }, snapshot.status === 'connected' ? 'El NADIA no tiene la lista «Acoustic Presets».' : 'Esperando a Constellation…'),
   ];
 }
 
