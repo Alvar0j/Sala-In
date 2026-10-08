@@ -19,10 +19,12 @@ PID_WEB="$LOG_DIR/web.pid"
 PID_CAFE="$LOG_DIR/caffeinate.pid"
 mkdir -p "$LOG_DIR"
 
-ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; }
-warn() { printf '  \033[33m!\033[0m %s\n' "$1"; }
-fail() { printf '  \033[31m✗\033[0m %s\n' "$1"; }
-paso() { printf '\n\033[1m%s\033[0m\n' "$1"; }
+# Colores solo en el Terminal; en el registro (arranque.log) se escribe texto limpio.
+if [ -t 1 ]; then V=$'\033[32m'; A=$'\033[33m'; R=$'\033[31m'; N=$'\033[1m'; X=$'\033[0m'; else V=; A=; R=; N=; X=; fi
+ok()   { printf '  %s✓%s %s\n' "$V" "$X" "$1"; }
+warn() { printf '  %s!%s %s\n' "$A" "$X" "$1"; }
+fail() { printf '  %s✗%s %s\n' "$R" "$X" "$1"; }
+paso() { printf '\n%s%s%s\n' "$N" "$1" "$X"; }
 
 app_abierta() { pgrep -x "$1" >/dev/null 2>&1 || pgrep -f "/$1.app/" >/dev/null 2>&1; }
 pantalla_conectada() { system_profiler SPDisplaysDataType 2>/dev/null | grep -qi "$PANTALLA_VIRTUAL"; }
