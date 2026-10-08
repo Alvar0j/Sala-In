@@ -4,8 +4,8 @@ import { randomUUID } from 'node:crypto';
 
 export const newID = () => randomUUID().toUpperCase();
 
-export const STEP_KINDS = ['osc', 'wait', 'confirmation', 'instruction', 'watchoutPlay', 'watchoutPause', 'watchoutStop', 'presentationStart', 'presentationStop'];
-export const CONTROL_KINDS = ['osc', 'watchoutPlay', 'watchoutPause', 'watchoutStop'];
+export const STEP_KINDS = ['osc', 'wait', 'confirmation', 'instruction', 'watchoutPlay', 'watchoutPause', 'watchoutStop', 'presentationStart', 'presentationStop', 'constellation'];
+export const CONTROL_KINDS = ['osc', 'watchoutPlay', 'watchoutPause', 'watchoutStop', 'constellation'];
 export const PHASES = ['preparation', 'launch', 'finish'];
 
 export const DEFAULT_COMMANDS = {
@@ -50,7 +50,8 @@ export function normalizeControl(control) {
     requiresConfirmation: bool(control.requiresConfirmation, false),
   };
   // Campos exclusivos de la web (la app iOS los ignora al importar).
-  if (kind !== 'osc') { result.kind = kind; result.timelineId = str(control.timelineId, '', 64); }
+  if (kind === 'constellation') { result.kind = kind; result.command = str(control.command, '', 200).trim(); }
+  else if (kind !== 'osc') { result.kind = kind; result.timelineId = str(control.timelineId, '', 64); }
   return result;
 }
 

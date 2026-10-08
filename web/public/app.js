@@ -96,9 +96,9 @@ const STATE_LABELS = {
 const STEP_KINDS = {
   osc: 'Comando OSC (QLab)', watchoutPlay: 'WATCHOUT: reproducir timeline', watchoutPause: 'WATCHOUT: pausar timeline',
   watchoutStop: 'WATCHOUT: parar timeline', presentationStart: 'Presentación: abrir y empezar', presentationStop: 'Presentación: cerrar',
-  wait: 'Espera', confirmation: 'Confirmación', instruction: 'Instrucción',
+  constellation: 'Constellation: preset acústico', wait: 'Espera', confirmation: 'Confirmación', instruction: 'Instrucción',
 };
-const CONTROL_KINDS = { osc: 'Comando OSC (QLab)', watchoutPlay: 'WATCHOUT: reproducir', watchoutPause: 'WATCHOUT: pausar', watchoutStop: 'WATCHOUT: parar' };
+const CONTROL_KINDS = { osc: 'Comando OSC (QLab)', watchoutPlay: 'WATCHOUT: reproducir', watchoutPause: 'WATCHOUT: pausar', watchoutStop: 'WATCHOUT: parar', constellation: 'Constellation: preset' };
 const PHASES = { preparation: 'Preparación', launch: 'Lanzamiento', finish: 'Finalización' };
 const COMMANDS = {
   powerOnCommand: 'Encender sala (ON)', powerOffCommand: 'Apagar sala (OFF)', checkSpeakersCommand: 'Check altavoces',
@@ -173,9 +173,9 @@ function refresh(configChanged = false) {
   const main = document.getElementById('main');
   if (!main) return render();
   if (view.name === 'settings') {
-    for (const [key, id] of [['qlab', 'qlab-status'], ['watchout', 'watchout-status']]) {
+    for (const [key, id] of [['qlab', 'qlab-status'], ['watchout', 'watchout-status'], ['constellation', 'constellation-status']]) {
       const el = document.getElementById(id);
-      if (el) el.replaceWith(statusLine(store.state[key], id));
+      if (el && store.state[key]) el.replaceWith(statusLine(store.state[key], id));
     }
   }
   if (editing && !configChanged) {
@@ -222,6 +222,7 @@ function topbar() {
     h('a', { class: 'brand', href: '#/demos' }, h('img', { src: 'img/icon.png', alt: '' }), 'Sala-In'),
     statusPill('QLab', store.state?.qlab),
     statusPill('WO', store.state?.watchout),
+    store.state?.constellation?.status !== 'disabled' ? statusPill('CST', store.state?.constellation) : null,
     h('button', { class: 'ghost small', title: `Sesión de ${store.user.username}`, onclick: logout }, '⎋'));
 }
 
@@ -562,7 +563,10 @@ function demoDetailView(id) {
 }
 
 function controlButton(control, disabled, endpoint) {
-  const target = (control.kind ?? 'osc') === 'osc' ? control.oscAddress : `${CONTROL_KINDS[control.kind]} ${timelineLabel(control.timelineId)}`;
+  const kind = control.kind ?? 'osc';
+  const target = kind === 'osc' ? control.oscAddress
+    : kind === 'constellation' ? `Constellation ${constellationLabel(control.command)}`
+      : `${CONTROL_KINDS[control.kind]} ${timelineLabel(control.timelineId)}`;
   return h('button', {
     class: 'big-button', style: { '--tint': control.colorHex }, disabled,
     title: target,
@@ -572,6 +576,17 @@ function controlButton(control, disabled, endpoint) {
     },
   }, h('span', { class: 'glyph' }, icon(control.symbol)), control.title);
 }
+
+// Presets de Constellation leídos del NADIA (llegan con el estado en tiempo real).
+const constellationGroups = () => store.state?.constellation?.groups ?? [];
+const constellationLabel = (value) => {
+  const text = String(value ?? '').trim();
+  for (const group of constellationGroups()) {
+    const cue = group.cues.find((c) => c.id === text);
+    if (cue) return `«${cue.name}» (${group.name})`;
+  }
+  return /^\d+$/.test(text) ? `cue ${text}` : `«${text || '?'}»`;
+};
 
 const timelineLabel = (id) => {
   const timeline = store.timelines.find((t) => String(t.id) === String(id));
@@ -669,6 +684,7 @@ function stepEditor(step, index, steps, rerender) {
   else if (step.kind.startsWith('watchout')) valueField = field('Timeline de WATCHOUT', timelineSelect(step, 'value'));
   else if (step.kind === 'wait') valueField = field('Segundos', input(step, 'delaySeconds', 'number'));
   else if (step.kind === 'presentationStart') valueField = field('Presentación (sube archivos en Demos → ＋ Presentación o en Archivos)', fileSelect(step, 'value'));
+  else if (step.kind === 'constellation') valueField = field('Preset de Constellation', constellationSelect(step, 'value'));
   else if (step.kind === 'presentationStop') valueField = h('p', { class: 'small muted' }, 'Detiene la presentación y cierra Keynote.');
   else valueField = field(step.kind === 'confirmation' ? 'Pregunta que verá el operador' : 'Instrucción que verá el operador', textarea(step, 'value'));
   const testable = !['wait', 'confirmation', 'instruction', 'presentationStart', 'presentationStop'].includes(step.kind);
@@ -690,14 +706,18 @@ function controlsEditor(controls, rerender, title, help) {
     controls.map((control, index) => {
       const kind = control.kind ?? 'osc';
       const kindSelect = h('select', { onchange: (e) => {
-        if (e.target.value === 'osc') { delete control.kind; delete control.timelineId; } else { control.kind = e.target.value; control.timelineId ??= ''; }
+        delete control.timelineId; delete control.command;
+        if (e.target.value === 'osc') delete control.kind;
+        else { control.kind = e.target.value; if (control.kind === 'constellation') control.command = ''; else control.timelineId = ''; }
         rerender();
       } }, Object.entries(CONTROL_KINDS).map(([k, label]) => h('option', { value: k, selected: k === kind }, label)));
       return h('div', { class: 'step' },
         h('div', { class: 'step-head' }, h('span', { style: { fontSize: '1.4rem' } }, icon(control.symbol)), input(control, 'title', 'text', 'Título'), listTools(controls, index, rerender)),
         h('div', { class: 'form-grid' },
           field('Acción', kindSelect),
-          kind === 'osc' ? field('Comando OSC', input(control, 'oscAddress', 'text', '/cue/5/start')) : field('Timeline', timelineSelect(control, 'timelineId'))),
+          kind === 'osc' ? field('Comando OSC', input(control, 'oscAddress', 'text', '/cue/5/start'))
+            : kind === 'constellation' ? field('Preset', constellationSelect(control, 'command'))
+              : field('Timeline', timelineSelect(control, 'timelineId'))),
         h('details', {}, h('summary', { class: 'small muted' }, 'Icono y color'),
           h('div', { style: { display: 'grid', gap: '8px', marginTop: '8px' } }, iconPicker(control, rerender), colorPicker(control, rerender))),
         h('div', { class: 'row' }, checkbox(control, 'requiresConfirmation', 'Pedir confirmación'), h('span', { class: 'spacer' }),
@@ -736,6 +756,35 @@ function timelineSelect(obj, key) {
   if (!current) { options.unshift(h('option', { value: '', selected: true }, 'Elige un timeline…')); }
   return h('select', { onchange: (e) => { obj[key] = e.target.value; } }, options);
 }
+// Desplegable con los presets del NADIA, o comando de texto libre («Otro comando…»).
+function constellationSelect(obj, key) {
+  const current = String(obj[key] ?? '').trim();
+  const groups = constellationGroups();
+  const known = groups.some((g) => g.cues.some((c) => c.id === current));
+  const wrap = h('div', { style: { display: 'grid', gap: '6px' } });
+  const text = h('input', {
+    value: current, placeholder: 'Nº de cue (42) o comando: recall cue 42', autocapitalize: 'none',
+    oninput: (e) => { obj[key] = e.target.value.trim(); },
+  });
+  if (!groups.length) {
+    appendAll(wrap, text, h('span', { class: 'small muted' }, 'Configura Constellation en Ajustes para elegir los presets de una lista.'));
+    return wrap;
+  }
+  const custom = Boolean(current) && !known;
+  const select = h('select', {
+    onchange: (e) => {
+      if (e.target.value === '__custom') { text.hidden = false; text.focus(); return; }
+      obj[key] = e.target.value; text.value = e.target.value; text.hidden = true;
+    },
+  },
+  h('option', { value: '', selected: !current }, 'Elige un preset…'),
+  groups.map((g) => h('optgroup', { label: g.name }, g.cues.map((c) => h('option', { value: c.id, selected: c.id === current }, `${c.name} (cue ${c.id})`)))),
+  h('option', { value: '__custom', selected: custom }, 'Otro comando…'));
+  text.hidden = !custom;
+  appendAll(wrap, select, text);
+  return wrap;
+}
+
 async function loadTimelines() {
   const result = await api('GET', '/api/watchout/timelines').catch(() => null);
   if (result?.timelines?.length) {
@@ -752,7 +801,29 @@ function constellationView() {
     h('img', { class: 'logo', src: 'img/constellation.png', alt: 'Constellation' }),
     h('div', { class: 'section-head' }, h('h2', {}, 'Controles'), can('editor') ? h('a', { class: 'button small', href: '#/constellation/edit' }, '✏️ Editar botones') : null),
     buttons.length ? h('div', { class: 'grid' }, buttons.map((b) => controlButton(b, false, `/api/constellation/${b.id}`)))
-      : h('div', { class: 'empty' }, 'Sin botones de Constellation.'));
+      : h('div', { class: 'empty' }, 'Sin botones de Constellation.'),
+    nadiaPresets());
+}
+
+// Presets leídos directamente del NADIA (Ajustes → Constellation).
+function nadiaPresets() {
+  const snapshot = store.state?.constellation;
+  if (!snapshot || snapshot.status === 'disabled') return null;
+  const groups = constellationGroups();
+  const recall = async (group, cue) => {
+    if (group.confirm && !await confirmDialog(`¿Poner «${cue.name}»?`, `Constellation · ${group.name}. Cambia la acústica de la sala.`, { ok: 'Aplicar' })) return;
+    run(() => api('POST', `/api/nadia/recall/${cue.id}`), `${cue.name} aplicado`);
+  };
+  return [
+    h('div', { class: 'section-head' }, h('h2', {}, 'Presets del sistema'), statusLine(snapshot, 'constellation-status')),
+    groups.length ? groups.map((group) => [
+      h('h3', { class: 'small muted' }, group.name),
+      h('div', { class: 'grid' }, group.cues.map((cue) => h('button', {
+        class: 'big-button', style: { '--tint': /off|none/i.test(cue.name) ? '#6B7280' : '#18B4C9' },
+        disabled: snapshot.status !== 'connected', title: `Cue ${cue.id}`, onclick: () => recall(group, cue),
+      }, cue.name))),
+    ]) : h('div', { class: 'empty' }, snapshot.status === 'connected' ? 'El NADIA no tiene presets visibles.' : 'Esperando a Constellation…'),
+  ];
 }
 
 function constellationEditorView() {
@@ -814,7 +885,7 @@ function logView() {
 function settingsView() {
   if (!draft) {
     const s = store.settings ?? { qlab: {}, watchout: {} };
-    draft = { qlab: { ...s.qlab, passcode: '' }, watchout: { ...s.watchout }, users: null };
+    draft = { qlab: { ...s.qlab, passcode: '' }, watchout: { ...s.watchout }, constellation: { host: '', port: 8080, ...s.constellation }, users: null };
     api('GET', '/api/users').then((r) => { if (draft) { draft.users = r.users; rerenderSettings(); } }).catch(() => {});
   }
   const d = draft;
@@ -855,6 +926,7 @@ function settingsView() {
       w.timelines?.length ? h('details', {}, h('summary', { class: 'small' }, `${w.timelines.length} timelines detectados`),
         h('table', {}, h('tbody', {}, w.timelines.map((t) => h('tr', {}, h('td', { class: 'mono' }, t.id), h('td', {}, t.name)))))) : null,
       h('div', { class: 'row end' }, h('button', { class: 'primary small', onclick: saveWatchout }, 'Guardar WATCHOUT'))),
+    constellationSettingsCard(d),
     presentationSettingsCard(d),
     usersCard(d),
     importExportCard());
@@ -866,6 +938,23 @@ function statusLine(snapshot, id) {
     snapshot.status === 'connected'
       ? `Conectado${snapshot.version ? ` · versión ${snapshot.version}` : ''}${snapshot.cues && snapshot.workspace ? ` · workspace «${snapshot.workspace}»` : ''}`
       : snapshot.detail || snapshot.status);
+}
+
+function constellationSettingsCard(d) {
+  const c = store.state.constellation ?? { status: 'disabled', detail: 'Sin configurar', groups: [] };
+  const save = async () => {
+    const result = await run(() => api('PUT', '/api/settings', { constellation: d.constellation }), 'Ajustes de Constellation guardados');
+    if (result) store.settings = result;
+  };
+  const presets = c.groups?.reduce((n, g) => n + g.cues.length, 0) ?? 0;
+  return h('div', { class: 'card' },
+    h('div', { class: 'section-head' }, h('h2', {}, 'Constellation (Meyer NADIA)'), h('button', { class: 'small', onclick: () => run(() => api('POST', '/api/nadia/refresh'), 'Actualizado') }, 'Comprobar')),
+    statusLine(c, 'constellation-status'),
+    h('p', { class: 'small muted' }, 'IP del NADIA, la misma con la que se abre su dashboard (en vuestra sala 10.1.1.25, por la red AVB). Puerto 8080.'),
+    h('div', { class: 'form-grid' }, field('IP del NADIA', input(d.constellation, 'host', 'text', '10.1.1.25')), field('Puerto', input(d.constellation, 'port', 'number'))),
+    presets ? h('details', {}, h('summary', { class: 'small' }, `${presets} presets en ${c.groups.length} grupos`),
+      h('table', {}, h('tbody', {}, c.groups.flatMap((g) => g.cues.map((cue) => h('tr', {}, h('td', { class: 'mono' }, cue.id), h('td', {}, cue.name), h('td', { class: 'muted' }, g.name))))))) : null,
+    h('div', { class: 'row end' }, h('button', { class: 'primary small', onclick: save }, 'Guardar Constellation')));
 }
 
 function presentationSettingsCard(d) {

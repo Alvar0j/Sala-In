@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startMockQLab } from './mock-qlab.js';
 import { startMockWatchout } from './mock-watchout.js';
+import { startMockNadia } from './mock-nadia.js';
 import { createApp } from '../src/app.js';
 import { hashPassword } from '../src/auth.js';
 import { normalizeConfig } from '../src/model.js';
@@ -16,6 +17,7 @@ const dataDir = path.join(root, 'data-demo');
 const port = Number(process.env.PORT ?? 8080);
 const QLAB_PORT = 53999;
 const WATCHOUT_PORT = 3919;
+const NADIA_PORT = 8981;
 
 const osc = (title, value) => ({ kind: 'osc', title, value });
 const wo = (kind, title, value) => ({ kind, title, value });
@@ -28,6 +30,7 @@ function seed() {
   write('settings.json', {
     qlab: { host: '127.0.0.1', port: QLAB_PORT, workspace: 'Sala', replyPort: QLAB_PORT - 1, passcode: '' },
     watchout: { host: '127.0.0.1', port: WATCHOUT_PORT },
+    constellation: { host: '127.0.0.1', port: NADIA_PORT },
     presentation: { driver: 'simulado', watchoutTimelineId: '30' },
   });
   // Presentación de ejemplo (un archivo vacío: el reproductor simulado no lo abre de verdad).
@@ -69,19 +72,22 @@ function seed() {
       {
         name: 'Constellation: acústica variable', summary: 'Comparativa de salas con Constellation.', symbol: 'waveform', colorHex: '#18B4C9',
         estimatedMinutes: 8, roomConfigurationCommand: '/cue/const/start', configurationSeconds: 10,
-        launch: [{ kind: 'confirmation', title: 'Micrófonos', value: '¿Están los micrófonos de sala encendidos?' }, osc('Preset catedral', '/cue/catedral/start')],
+        launch: [
+          { kind: 'confirmation', title: 'Micrófonos', value: '¿Están los micrófonos de sala encendidos?' },
+          { kind: 'constellation', title: 'Constellation ON', value: '32' },
+          { kind: 'constellation', title: 'Preset Sinfónica', value: '48' },
+        ],
+        finish: [{ kind: 'constellation', title: 'Preset None', value: '41' }, { kind: 'constellation', title: 'Constellation OFF', value: '30' }],
         liveControls: [
-          { title: 'Catedral', oscAddress: '/cue/catedral/start', symbol: 'star.fill', colorHex: '#8E5CF7' },
-          { title: 'Estudio', oscAddress: '/cue/estudio/start', symbol: 'music.note', colorHex: '#3478F6' },
-          { title: 'Apagar', oscAddress: '/cue/const-off/start', symbol: 'power', colorHex: '#E5484D', requiresConfirmation: true },
+          { title: 'Ópera', kind: 'constellation', command: '47', symbol: 'star.fill', colorHex: '#8E5CF7' },
+          { title: 'Jazz', kind: 'constellation', command: '45', symbol: 'music.note', colorHex: '#3478F6' },
+          { title: 'Presentación', kind: 'constellation', command: '42', symbol: 'person.3.fill', colorHex: '#18B4C9' },
         ],
       },
     ],
     constellationButtons: [
-      { title: 'Constellation ON', oscAddress: '/cue/c-on/start', symbol: 'power', colorHex: '#2EB872' },
-      { title: 'Constellation OFF', oscAddress: '/cue/c-off/start', symbol: 'power', colorHex: '#E5484D', requiresConfirmation: true },
-      { title: 'Sala seca', oscAddress: '/cue/seca/start', symbol: 'drop.fill', colorHex: '#18B4C9' },
-      { title: 'Sala viva', oscAddress: '/cue/viva/start', symbol: 'sparkles.rectangle.stack', colorHex: '#8E5CF7' },
+      { title: 'Constellation ON', kind: 'constellation', command: '32', symbol: 'power', colorHex: '#2EB872' },
+      { title: 'Constellation OFF', kind: 'constellation', command: '30', symbol: 'power', colorHex: '#E5484D', requiresConfirmation: true },
     ],
   }));
 }
@@ -89,9 +95,10 @@ function seed() {
 seed();
 await startMockQLab({ port: QLAB_PORT, log: () => {} });
 await startMockWatchout({ port: WATCHOUT_PORT, log: () => {} });
+await startMockNadia({ port: NADIA_PORT, log: () => {} });
 const { server } = createApp({ dataDir });
 server.listen(port, '0.0.0.0', () => {
   console.log(`\nModo demostración listo: http://localhost:${port}`);
   console.log('  Usuario admin / demo1234  (todo)   ·   sala / demo1234  (solo lanzar)');
-  console.log('  QLab y WATCHOUT son simulados. `npm run demo -- --reset` restaura los datos de ejemplo.\n');
+  console.log('  QLab, WATCHOUT y Constellation son simulados. `npm run demo -- --reset` restaura los datos de ejemplo.\n');
 });

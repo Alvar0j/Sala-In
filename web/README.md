@@ -103,6 +103,26 @@ por nombre en el editor.
 > pero la web no muestra la lista de timelines, los pasos siguen funcionando escribiendo el ID a mano;
 > guarda la salida de `curl .../v0/timelines` para ajustar la web a su formato.
 
+### Constellation (Meyer NADIA)
+
+La web habla con el NADIA igual que su dashboard (`http://10.1.1.25:8080`): por HTTP, con los comandos de texto
+de CueStation. Los presets acústicos son cues del NADIA y la web los lee de él.
+
+```sh
+curl -s "http://10.1.1.25:8080/cmd?print_default/cuelists"   # listas de cues (On/Off, Acoustic Presets…)
+```
+
+En Ajustes → **Constellation**: IP `10.1.1.25` (red AVB, la del Mac mini en `en12`) y puerto `8080`. Al
+guardar aparecen:
+
+- en la pestaña **Constellation**, botones con todos los presets (On/Off, Acoustic Presets, Length…);
+- en el editor de demos, el paso **Constellation: preset acústico**, con un desplegable de presets. Lo
+  normal es *On* + preset al lanzar, y *None* + *Off* en la Finalización.
+
+Cada preset se lanza con `recall cue N` (el número aparece en el desplegable). En «Otro comando…» se puede
+escribir cualquier comando de texto. Los cues de calibración y mediciones (barridos, ruido rosa) no se
+ofrecen y la web se niega a lanzarlos por número.
+
 ### Traer las demos del iPad
 
 En la app de iPad, exporta la configuración (`QLab-Remote-Cues.qlabremote.json`), pásala al Mac por AirDrop y
@@ -216,6 +236,7 @@ de vez en cuando. No se sube al repositorio.
 | WATCHOUT en rojo: *tiempo agotado* | IP incorrecta o firewall de Windows | Comprueba la IP con `ipconfig`; abre el puerto 3019 |
 | *macOS no permite que la web controle Keynote* | Permiso de Automatización denegado | *Ajustes del Sistema → Privacidad y seguridad → Automatización* |
 | Keynote se abre en la pantalla equivocada | Ajuste de Keynote | *Keynote → Ajustes → Presentación* → pantalla |
+| Constellation en rojo | IP o red | Abre `http://10.1.1.25:8080` en Safari del mismo Mac; si abre, revisa la IP en Ajustes |
 | Una demo se queda en *Error* | Un paso ha fallado | El error aparece en la demo y en **Registro**; marca *Continuar si falla* en pasos no críticos |
 
 ## 9. Modo demostración y estética

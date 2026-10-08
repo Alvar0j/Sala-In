@@ -8,12 +8,13 @@ class Cancelled extends Error {
 
 export class DemoRunner extends EventEmitter {
   /**
-   * @param {{qlab: any, watchout: any, log: Function, getDemo: (id: string) => any}} deps
+   * @param {{qlab: any, watchout: any, constellation?: any, log: Function, getDemo: (id: string) => any}} deps
    */
-  constructor({ qlab, watchout, presenter = null, getFile = () => null, log, getDemo }) {
+  constructor({ qlab, watchout, constellation = null, presenter = null, getFile = () => null, log, getDemo }) {
     super();
     this.qlab = qlab;
     this.watchout = watchout;
+    this.constellation = constellation;
     this.presenter = presenter;
     this.getFile = getFile;
     this.log = log;
@@ -217,6 +218,10 @@ export class DemoRunner extends EventEmitter {
         return this.presenter.open(file, demo?.id ?? null);
       }
       case 'presentationStop': return this.presenter?.stop();
+      case 'constellation': {
+        if (!this.constellation) throw new Error('Constellation no está disponible.');
+        return this.constellation.run(step.value);
+      }
       default: throw new Error(`Tipo de paso desconocido: ${step.kind}`);
     }
   }
@@ -234,7 +239,8 @@ export class DemoRunner extends EventEmitter {
 
 export function controlToStep(control) {
   const kind = control.kind ?? 'osc';
-  return { kind, title: control.title, value: kind === 'osc' ? control.oscAddress : control.timelineId };
+  const value = kind === 'osc' ? control.oscAddress : kind === 'constellation' ? control.command : control.timelineId;
+  return { kind, title: control.title, value };
 }
 
 function sleep(ms, signal) {

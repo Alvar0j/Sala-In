@@ -7,6 +7,7 @@ import { Store } from './store.js';
 import { Auth, COOKIE, hasRole, ROLES } from './auth.js';
 import { QLabClient } from './qlab.js';
 import { WatchoutClient } from './watchout.js';
+import { ConstellationClient } from './constellation.js';
 import { DemoRunner } from './runner.js';
 import { Presenter } from './presenter.js';
 import { FileStore } from './files.js';
@@ -25,7 +26,9 @@ class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 
-export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverride, presenter: presenterOverride, loginDelayMs = 400 } = {}) {
+export function createApp({
+  dataDir, qlab: qlabOverride, watchout: watchoutOverride, constellation: constellationOverride, presenter: presenterOverride, loginDelayMs = 400,
+} = {}) {
   const store = new Store(dataDir);
   const files = new FileStore(dataDir);
   const auth = new Auth(store);
@@ -42,16 +45,21 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
   const watchout = watchoutOverride ?? new WatchoutClient({ log });
   qlab.log = qlab.log ?? log;
   watchout.log = watchout.log ?? log;
+  const constellation = constellationOverride ?? new ConstellationClient({ log });
+  constellation.log = constellation.log ?? log;
   const presenter = presenterOverride ?? new Presenter({ log });
   presenter.log = presenter.log ?? log;
   const runner = new DemoRunner({
-    qlab, watchout, presenter, log,
+    qlab, watchout, constellation, presenter, log,
     getDemo: (id) => store.config.demos.find((d) => d.id === id),
     getFile: (id) => files.get(id),
   });
 
   // --- tiempo real -------------------------------------------------------------
-  const state = () => ({ qlab: qlab.snapshot(), watchout: watchout.snapshot(), runner: runner.snapshot(), presentation: presenter.snapshot() });
+  const state = () => ({
+    qlab: qlab.snapshot(), watchout: watchout.snapshot(), constellation: constellation.snapshot(),
+    runner: runner.snapshot(), presentation: presenter.snapshot(),
+  });
   let pending = null;
   const scheduleState = () => {
     if (pending) return;
@@ -65,6 +73,7 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
   presenter.on('change', scheduleState);
   const filesChanged = () => broadcast('files', files.list());
   watchout.on('change', scheduleState);
+  constellation.on('change', scheduleState);
   runner.on('change', scheduleState);
   const configChanged = () => broadcast('config', publicConfig());
   const keepAlive = setInterval(() => { for (const c of clients) c.write(': ping\n\n'); }, 25_000);
@@ -73,12 +82,14 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
   const publicSettings = () => ({
     qlab: { ...store.settings.qlab, passcode: undefined, hasPasscode: Boolean(store.settings.qlab.passcode) },
     watchout: store.settings.watchout,
+    constellation: store.settings.constellation,
     presentation: store.settings.presentation,
   });
 
   presenter.configure(store.settings.presentation);
   qlab.configure(store.settings.qlab);
   watchout.configure(store.settings.watchout);
+  constellation.configure(store.settings.constellation);
 
   // --- rutas -------------------------------------------------------------------
   const routes = [];
@@ -146,6 +157,12 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
     const control = store.config.constellationButtons.find((c) => c.id === params.controlId);
     if (!control) throw new HttpError(404, 'Botón no encontrado.');
     await runner.runControl(control);
+    return { ok: true };
+  });
+  route('POST', '/api/nadia/recall/:cue', 'operador', async ({ params }) => {
+    if (!/^\d+$/.test(params.cue)) throw new HttpError(400, 'Cue no válido.');
+    if (!constellation.groups.some((g) => g.cues.some((c) => c.id === params.cue))) throw new HttpError(404, 'Ese preset no está en la lista de Constellation.');
+    try { await constellation.run(params.cue); } catch (error) { throw new HttpError(502, error.message); }
     return { ok: true };
   });
   route('POST', '/api/commands/:name', 'operador', async ({ params }) => {
@@ -235,6 +252,7 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
       if (next.qlab.workspace.includes('/')) throw new HttpError(400, 'El workspace no puede contener «/».');
     }
     if (body.watchout) next.watchout = { host: String(body.watchout.host ?? '').trim(), port: port(body.watchout.port, 3019) };
+    if (body.constellation) next.constellation = { host: String(body.constellation.host ?? '').trim(), port: port(body.constellation.port, 8080) };
     if (body.presentation) {
       const driver = ['keynote', 'simulado'].includes(body.presentation.driver) ? body.presentation.driver : next.presentation.driver;
       next.presentation = { driver, watchoutTimelineId: String(body.presentation.watchoutTimelineId ?? '').trim().slice(0, 64) };
@@ -242,12 +260,18 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
     store.saveSettings(next);
     if (body.qlab) qlab.configure(next.qlab);
     if (body.watchout) watchout.configure(next.watchout);
+    if (body.constellation) constellation.configure(next.constellation);
     if (body.presentation) presenter.configure(next.presentation);
     log('•', 'Ajustes', `Conexiones actualizadas por ${user.username}`);
     return publicSettings();
   });
   route('POST', '/api/qlab/reconnect', 'admin', () => { qlab.restart(); return { ok: true }; });
   route('POST', '/api/watchout/refresh', 'admin', async () => { await watchout.poll(); return { ok: true }; });
+  route('POST', '/api/nadia/refresh', 'admin', async () => {
+    constellation.groups = [];
+    await constellation.poll();
+    return { ok: true };
+  });
 
   route('GET', '/api/users', 'admin', () => ({ users: auth.list(), roles: ROLES }));
   route('POST', '/api/users', 'admin', ({ body }) => ({ user: auth.create(body) }));
@@ -379,11 +403,12 @@ export function createApp({ dataDir, qlab: qlabOverride, watchout: watchoutOverr
     clearInterval(keepAlive);
     qlab.stop();
     watchout.stop();
+    constellation.stop();
     presenter.stopPolling();
     for (const c of clients) c.end();
   });
 
-  return { server, store, qlab, watchout, runner, auth, presenter, files };
+  return { server, store, qlab, watchout, constellation, runner, auth, presenter, files };
 }
 
 function json(res, status, value) {
