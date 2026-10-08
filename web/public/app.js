@@ -86,7 +86,8 @@ const ICONS = {
   'drop.fill': '💧', 'leaf.fill': '🍃', 'gearshape.fill': '⚙️', 'power': '⏻', 'exclamationmark.octagon.fill': '🛑',
   'arrow.counterclockwise': '🔄', 'rectangle.on.rectangle': '🖥️', 'point.3.connected.trianglepath.dotted': '✳️',
 };
-const icon = (symbol) => ICONS[symbol] ?? '●';
+const isEmoji = (text) => typeof text === 'string' && text.length <= 16 && /\p{Extended_Pictographic}/u.test(text);
+const icon = (symbol) => ICONS[symbol] ?? (isEmoji(symbol) ? symbol : '●');
 const COLORS = ['#3478F6', '#2EB872', '#E5484D', '#F0A020', '#8E5CF7', '#E54CA0', '#18B4C9', '#6B7280', '#A16207', '#111827'];
 
 const STATE_LABELS = {
@@ -113,7 +114,8 @@ let events = null;
 const can = (role) => store.user && RANK[store.user.role] >= RANK[role];
 const demoById = (id) => store.config?.demos.find((d) => d.id === id);
 const demoState = (id) => store.state?.runner.states[id]?.state ?? 'idle';
-const qlabReady = () => store.state?.qlab.ready;
+const testMode = () => Boolean(store.state?.testMode);
+const qlabReady = () => store.state?.qlab.ready || testMode();
 
 async function boot() {
   const session = await api('GET', '/api/session').catch(() => ({ user: null, needsSetup: false }));
@@ -167,7 +169,7 @@ function render() {
 function refresh(configChanged = false) {
   if (!store.user) return;
   const view = currentView();
-  const editing = view.name === 'edit' || view.name === 'new' || (view.name === 'constellation' && view.id === 'edit') || view.name === 'settings';
+  const editing = view.name === 'edit' || view.name === 'new' || (view.name === 'constellation' && ['edit', 'presets'].includes(view.id)) || view.name === 'settings';
   const top = document.querySelector('.topbar');
   if (top) top.replaceWith(topbar());
   const main = document.getElementById('main');
@@ -198,7 +200,10 @@ function viewContent() {
     case 'demo': return demoDetailView(view.id);
     case 'edit': return can('editor') ? demoEditorView(view.id) : notAllowed();
     case 'new': return can('editor') ? demoEditorView(null) : notAllowed();
-    case 'constellation': return view.id === 'edit' && can('editor') ? constellationEditorView() : constellationView();
+    case 'constellation':
+      if (view.id === 'edit' && can('editor')) return constellationEditorView();
+      if (view.id === 'presets' && can('editor')) return presetsEditorView();
+      return constellationView();
     case 'check': return checkView();
     case 'log': return logView();
     case 'settings': return can('admin') ? settingsView() : notAllowed();
@@ -222,8 +227,16 @@ function topbar() {
     h('a', { class: 'brand', href: '#/demos' }, h('img', { src: 'img/icon.png', alt: '' }), 'Sala-In'),
     statusPill('QLab', store.state?.qlab),
     statusPill('WO', store.state?.watchout),
-    store.state?.constellation?.status !== 'disabled' ? statusPill('CST', store.state?.constellation) : null,
-    h('button', { class: 'ghost small', title: `Sesión de ${store.user.username}`, onclick: logout }, '⎋'));
+    store.state?.constellation?.host ? statusPill('CST', store.state?.constellation) : null,
+    h('button', { class: 'ghost small', title: `Sesión de ${store.user.username}`, onclick: logout }, '⎋'),
+    testMode() ? h('div', { class: 'test-strip' },
+      h('span', {}, '🧪 ', h('strong', {}, 'Modo prueba'), ' · no se envía nada a QLab, WATCHOUT, Constellation ni Keynote'),
+      can('admin') ? h('button', { class: 'small', onclick: () => setTestMode(false) }, 'Volver a conectar') : null) : null);
+}
+
+async function setTestMode(enabled) {
+  const result = await run(() => api('PUT', '/api/test-mode', { enabled }), enabled ? 'Modo prueba activado' : 'Conexiones restablecidas');
+  if (result && store.state) { store.state.testMode = result.testMode; refresh(); rerenderSettings(); }
 }
 
 function tabs() {
@@ -676,9 +689,9 @@ function listTools(list, index, rerender) {
   ];
 }
 
-function stepEditor(step, index, steps, rerender) {
+function stepEditor(step, index, steps, rerender, kinds = STEP_KINDS) {
   const kindSelect = h('select', { onchange: (e) => { step.kind = e.target.value; rerender(); } },
-    Object.entries(STEP_KINDS).map(([k, label]) => h('option', { value: k, selected: k === step.kind }, label)));
+    Object.entries(kinds).map(([k, label]) => h('option', { value: k, selected: k === step.kind }, label)));
   let valueField;
   if (step.kind === 'osc') valueField = field('Comando OSC (puede llevar argumentos: /cue/1/level 0 -10)', input(step, 'value', 'text', '/cue/5/start'));
   else if (step.kind.startsWith('watchout')) valueField = field('Timeline de WATCHOUT', timelineSelect(step, 'value'));
@@ -698,7 +711,11 @@ function stepEditor(step, index, steps, rerender) {
 }
 
 function controlsEditor(controls, rerender, title, help) {
-  const add = () => { controls.push({ id: uuid(), title: 'Control', oscAddress: '', colorHex: '#3478F6', symbol: 'play.fill', requiresConfirmation: false }); rerender(); };
+  const add = () => {
+    // Cada botón nuevo con un color distinto, para distinguirlos de un vistazo.
+    const colorHex = COLORS.find((c) => !controls.some((x) => x.colorHex?.toUpperCase() === c)) ?? COLORS[controls.length % COLORS.length];
+    controls.push({ id: uuid(), title: 'Control', oscAddress: '', colorHex, symbol: 'play.fill', requiresConfirmation: false }); rerender();
+  };
   return h('div', { class: 'card' },
     h('div', { class: 'section-head' }, h('h2', {}, title), h('button', { class: 'small', onclick: add }, '＋ Añadir botón')),
     help ? h('p', { class: 'small muted' }, help) : null,
@@ -718,7 +735,8 @@ function controlsEditor(controls, rerender, title, help) {
           kind === 'osc' ? field('Comando OSC', input(control, 'oscAddress', 'text', '/cue/5/start'))
             : kind === 'constellation' ? field('Preset', constellationSelect(control, 'command'))
               : field('Timeline', timelineSelect(control, 'timelineId'))),
-        h('details', {}, h('summary', { class: 'small muted' }, 'Icono y color'),
+        h('details', {}, h('summary', { class: 'small' }, 'Icono y color ',
+          h('span', { class: 'chip', style: { '--tint': control.colorHex } }, icon(control.symbol), ' ', control.title || 'Control')),
           h('div', { style: { display: 'grid', gap: '8px', marginTop: '8px' } }, iconPicker(control, rerender), colorPicker(control, rerender))),
         h('div', { class: 'row' }, checkbox(control, 'requiresConfirmation', 'Pedir confirmación'), h('span', { class: 'spacer' }),
           h('button', { class: 'small', onclick: () => run(() => api('POST', '/api/test-step', { control }), 'Enviado') }, 'Probar')));
@@ -738,8 +756,21 @@ function checkbox(obj, key, label, rerender) {
   return h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: Boolean(obj[key]), onchange: (e) => { obj[key] = e.target.checked; rerender?.(); } }), label);
 }
 function iconPicker(obj, rerender) {
-  return h('div', { class: 'icon-picker' }, Object.entries(ICONS).map(([name, glyph]) =>
-    h('button', { type: 'button', title: name, class: obj.symbol === name ? 'selected' : '', onclick: () => { obj.symbol = name; rerender(); } }, glyph)));
+  const custom = isEmoji(obj.symbol) && !ICONS[obj.symbol];
+  const emojiInput = h('input', {
+    class: 'emoji-input', value: custom ? obj.symbol : '', placeholder: '🙂', maxlength: 16, 'aria-label': 'Emoji',
+    onchange: (e) => {
+      const value = e.target.value.trim();
+      if (!value) return;
+      if (!isEmoji(value)) { toast('Escribe un solo emoji.', 'error'); return; }
+      obj.symbol = value; rerender();
+    },
+  });
+  return h('div', { style: { display: 'grid', gap: '8px' } },
+    h('div', { class: 'icon-picker' }, Object.entries(ICONS).map(([name, glyph]) =>
+      h('button', { type: 'button', title: name, class: obj.symbol === name ? 'selected' : '', onclick: () => { obj.symbol = name; rerender(); } }, glyph))),
+    h('label', { class: 'row small muted' }, 'O cualquier emoji:', emojiInput,
+      h('span', {}, 'En el Mac: ⌃⌘Espacio · en el móvil: teclado de emojis')));
 }
 function colorPicker(obj, rerender) {
   return h('div', { class: 'swatches' },
@@ -799,31 +830,145 @@ function constellationView() {
   const buttons = store.config.constellationButtons;
   return h('section', {},
     h('img', { class: 'logo', src: 'img/constellation.png', alt: 'Constellation' }),
-    h('div', { class: 'section-head' }, h('h2', {}, 'Controles'), can('editor') ? h('a', { class: 'button small', href: '#/constellation/edit' }, '✏️ Editar botones') : null),
-    buttons.length ? h('div', { class: 'grid' }, buttons.map((b) => controlButton(b, false, `/api/constellation/${b.id}`)))
-      : h('div', { class: 'empty' }, 'Sin botones de Constellation.'),
-    nadiaPresets());
+    presetsSection(),
+    buttons.length ? [
+      h('div', { class: 'section-head' }, h('h2', {}, 'Controles'), can('editor') ? h('a', { class: 'button small', href: '#/constellation/edit' }, '✏️ Editar controles') : null),
+      h('div', { class: 'grid' }, buttons.map((b) => controlButton(b, false, `/api/constellation/${b.id}`))),
+    ] : can('editor') ? h('p', { class: 'small muted' }, h('a', { href: '#/constellation/edit' }, '＋ Añadir botones de control (OSC, WATCHOUT…)')) : null);
 }
 
-// Presets leídos directamente del NADIA (Ajustes → Constellation).
-function nadiaPresets() {
+// --- Botones de preset (fondo ilustrado + acciones extra) ---------------------------
+const PRESET_IMAGES = { presentacion: 'Presentación', qa: 'Q&A', drama: 'Drama', jazz: 'Jazz', camara: 'Cámara', opera: 'Ópera', sinfonica: 'Sinfónica', coral: 'Coral', none: 'None / apagado', sala: 'Sala (genérica)' };
+const PRESET_ACTION_KINDS = Object.fromEntries(['watchoutPlay', 'watchoutStop', 'watchoutPause', 'osc', 'constellation', 'wait'].map((k) => [k, STEP_KINDS[k]]));
+const slug = (text) => String(text ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+const defaultImage = (name) => `preset:${PRESET_IMAGES[slug(name)] ? slug(name) : 'sala'}`;
+const imageURL = (ref) => (ref?.startsWith('preset:') ? `img/presets/${ref.slice(7)}.svg` : ref?.startsWith('upload:') ? `/api/images/${ref.slice(7)}` : '');
+
+/** Botones por defecto: los Acoustic Presets que tiene el NADIA. */
+function autoPresets() {
+  const group = constellationGroups().find((g) => /acoustic preset/i.test(g.name));
+  return (group?.cues ?? []).map((cue) => ({
+    id: `auto-${cue.id}`, auto: true, title: cue.name, cue: cue.id, image: defaultImage(cue.name),
+    colorHex: '#18B4C9', requiresConfirmation: true, actions: [],
+  }));
+}
+
+function presetsSection() {
   const snapshot = store.state?.constellation;
-  if (!snapshot || snapshot.status === 'disabled') return null;
-  // En la pestaña solo se muestran los Acoustic Presets; el resto sigue disponible en el editor de demos.
-  const groups = constellationGroups().filter((g) => /acoustic preset/i.test(g.name));
-  const recall = async (group, cue) => {
-    if (group.confirm && !await confirmDialog(`¿Poner «${cue.name}»?`, `Constellation · ${group.name}. Cambia la acústica de la sala.`, { ok: 'Aplicar' })) return;
-    run(() => api('POST', `/api/nadia/recall/${cue.id}`), `${cue.name} aplicado`);
-  };
+  const saved = store.config.presetButtons ?? [];
+  const buttons = saved.length ? saved : autoPresets();
+  const connected = snapshot?.status === 'connected' || testMode();
+  if (!buttons.length && !snapshot?.host) {
+    return h('div', { class: 'empty' }, 'Configura Constellation en Ajustes para ver sus Acoustic Presets.');
+  }
   return [
-    h('div', { class: 'section-head' }, h('h2', {}, 'Acoustic Presets'), statusLine(snapshot, 'constellation-status')),
-    groups.length ? groups.map((group) => [
-      h('div', { class: 'grid' }, group.cues.map((cue) => h('button', {
-        class: 'big-button', style: { '--tint': /off|none/i.test(cue.name) ? '#6B7280' : '#18B4C9' },
-        disabled: snapshot.status !== 'connected', title: `Cue ${cue.id}`, onclick: () => recall(group, cue),
-      }, cue.name))),
-    ]) : h('div', { class: 'empty' }, snapshot.status === 'connected' ? 'El NADIA no tiene la lista «Acoustic Presets».' : 'Esperando a Constellation…'),
+    h('div', { class: 'section-head' }, h('h2', {}, 'Acoustic Presets'),
+      h('div', { class: 'row' }, snapshot?.host ? statusLine(snapshot, 'constellation-status') : null,
+        can('editor') ? h('a', { class: 'button small', href: '#/constellation/presets' }, '✏️ Editar') : null)),
+    buttons.length ? h('div', { class: 'grid preset-grid' }, buttons.map((b) => presetButton(b, b.cue && !connected))) : h('div', { class: 'empty' }, 'Esperando a Constellation…'),
   ];
+}
+
+function presetButton(button, disabled) {
+  const url = imageURL(button.image);
+  const extra = button.actions?.filter((a) => a.isEnabled !== false).length ?? 0;
+  return h('button', {
+    class: 'preset-button', disabled, title: button.cue ? `Cue ${button.cue}` : '',
+    style: { '--tint': button.colorHex, ...(url ? { backgroundImage: `url("${url}")` } : {}) },
+    onclick: async () => {
+      if (button.requiresConfirmation && !await confirmDialog(`¿Poner «${button.title}»?`,
+        `Cambia la acústica de la sala${extra ? ` y ejecuta ${extra} acción${extra > 1 ? 'es' : ''} más (WATCHOUT…)` : ''}.`, { ok: 'Aplicar' })) return;
+      run(() => api('POST', button.auto ? `/api/nadia/recall/${button.cue}` : `/api/presets/${button.id}`), `${button.title} aplicado`);
+    },
+  }, h('span', { class: 'preset-title' }, button.title), extra ? h('span', { class: 'preset-extra' }, `＋ ${extra} acción${extra > 1 ? 'es' : ''}`) : null);
+}
+
+function presetsEditorView() {
+  if (!draft) {
+    const saved = store.config.presetButtons ?? [];
+    draft = clone(saved.length ? saved : autoPresets()).map((b) => ({ ...b, id: b.auto ? uuid() : b.id, auto: undefined }));
+    loadTimelines();
+  }
+  const container = h('section', {});
+  const rerender = () => container.replaceWith(presetsEditorView());
+  const save = async () => {
+    if (await run(() => api('PUT', '/api/presets', { buttons: draft }), 'Botones guardados')) { draft = null; location.hash = '#/constellation'; }
+  };
+  const restore = async () => {
+    if (!await confirmDialog('¿Restaurar desde Constellation?', 'Se sustituyen estos botones por los Acoustic Presets del NADIA, con sus imágenes por defecto.', { ok: 'Restaurar', danger: true })) return;
+    draft = autoPresets().map((b) => ({ ...b, id: uuid(), auto: undefined })); rerender();
+  };
+  const add = () => { draft.push({ id: uuid(), title: 'Nuevo preset', cue: '', image: 'preset:sala', colorHex: '#18B4C9', requiresConfirmation: true, actions: [] }); rerender(); };
+  appendAll(container,
+    h('div', { class: 'row' }, h('a', { class: 'button small ghost', href: '#/constellation' }, '‹ Cancelar'), h('span', { class: 'spacer' }),
+      h('button', { class: 'small primary', onclick: save }, 'Guardar')),
+    h('h1', {}, 'Botones de Acoustic Presets'),
+    h('p', { class: 'small muted' }, 'Cada botón pone un preset de Constellation y, si quieres, lanza a la vez más acciones: un timeline de WATCHOUT, un cue de QLab…'),
+    draft.map((button, index) => presetEditor(button, index, rerender)),
+    h('div', { class: 'row' }, h('button', { class: 'small', onclick: add }, '＋ Añadir botón'), h('span', { class: 'spacer' }),
+      h('button', { class: 'small ghost', onclick: restore }, '↺ Restaurar desde Constellation')),
+    h('div', { class: 'row end' }, h('button', { class: 'primary', onclick: save }, 'Guardar botones')));
+  return container;
+}
+
+function presetEditor(button, index, rerender) {
+  button.actions ??= [];
+  const groups = constellationGroups();
+  const cueSelect = groups.length
+    ? h('select', { onchange: (e) => { button.cue = e.target.value; } },
+      h('option', { value: '', selected: !button.cue }, 'Sin preset (solo acciones)'),
+      groups.map((g) => h('optgroup', { label: g.name }, g.cues.map((c) => h('option', { value: c.id, selected: c.id === button.cue }, `${c.name} (cue ${c.id})`)))))
+    : input(button, 'cue', 'text', 'Nº de cue, p. ej. 42');
+  const addAction = (kind) => {
+    button.actions.push({ id: uuid(), kind, title: STEP_KINDS[kind].replace(/ \(.*\)/, ''), value: '', delaySeconds: 1, isEnabled: true, continueOnError: false });
+    rerender();
+  };
+  const kindSelect = h('select', {}, Object.entries(PRESET_ACTION_KINDS).map(([k, label]) => h('option', { value: k }, label)));
+  return h('div', { class: 'card' },
+    h('div', { class: 'preset-edit-head' },
+      presetButton({ ...button, actions: button.actions }, true),
+      h('div', { style: { display: 'grid', gap: '8px' } },
+        h('div', { class: 'row' }, input(button, 'title', 'text', 'Título'), listTools(draft, index, rerender)),
+        field('Preset de Constellation', cueSelect),
+        checkbox(button, 'requiresConfirmation', 'Pedir confirmación'))),
+    h('details', {}, h('summary', { class: 'small' }, 'Imagen de fondo'), imagePicker(button, rerender)),
+    h('div', { class: 'section-head' }, h('h3', { class: 'small' }, 'Además, al pulsar'), h('span', { class: 'small muted' }, `${button.actions.length} acciones`)),
+    button.actions.map((step, i) => stepEditor(step, i, button.actions, rerender, PRESET_ACTION_KINDS)),
+    h('div', { class: 'row' }, kindSelect, h('button', { class: 'small', onclick: () => addAction(kindSelect.value) }, '＋ Añadir acción')));
+}
+
+function imagePicker(button, rerender) {
+  const upload = h('input', {
+    type: 'file', accept: 'image/png,image/jpeg,image/webp', hidden: true,
+    onchange: async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const result = await run(() => uploadImage(file), 'Imagen subida');
+      if (result) { button.image = result; rerender(); }
+    },
+  });
+  const tile = (ref, label) => h('button', {
+    type: 'button', class: `image-tile ${button.image === ref ? 'selected' : ''}`, title: label,
+    style: { backgroundImage: `url("${imageURL(ref)}")` }, onclick: () => { button.image = ref; rerender(); },
+  }, h('span', {}, label));
+  return h('div', { style: { display: 'grid', gap: '8px', marginTop: '8px' } },
+    h('div', { class: 'image-tiles' },
+      Object.entries(PRESET_IMAGES).map(([key, label]) => tile(`preset:${key}`, label)),
+      button.image?.startsWith('upload:') ? tile(button.image, 'Tu imagen') : null,
+      h('button', { type: 'button', class: `image-tile none ${!button.image ? 'selected' : ''}`, onclick: () => { button.image = ''; rerender(); } }, h('span', {}, 'Solo color'))),
+    h('div', { class: 'row' }, h('button', { class: 'small', onclick: () => upload.click() }, '⬆ Subir imagen propia'), upload,
+      h('span', { class: 'small muted' }, 'PNG, JPG o WEBP. Mejor apaisada, p. ej. 800×480.')),
+    h('div', {}, h('span', { class: 'small muted' }, 'Color (si no hay imagen, o mientras carga)'), colorPicker(button, rerender)));
+}
+
+function uploadImage(file) {
+  return fetch(`/api/images?name=${encodeURIComponent(file.name)}`, {
+    method: 'POST', credentials: 'same-origin', headers: { 'X-Salain-Upload': '1', 'Content-Type': 'application/octet-stream' }, body: file,
+  }).then(async (response) => {
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error ?? `Error ${response.status}`);
+    return data.image;
+  });
 }
 
 function constellationEditorView() {
@@ -836,7 +981,7 @@ function constellationEditorView() {
   appendAll(container,
     h('div', { class: 'row' }, h('a', { class: 'button small ghost', href: '#/constellation' }, '‹ Cancelar'), h('span', { class: 'spacer' }),
       h('button', { class: 'small primary', onclick: save }, 'Guardar')),
-    controlsEditor(draft, rerender, 'Botones de Constellation'),
+    controlsEditor(draft, rerender, 'Botones de control', 'Botones con comandos OSC de QLab, timelines de WATCHOUT o presets. Aparecen debajo de los Acoustic Presets.'),
     h('div', { class: 'row end' }, h('button', { class: 'primary', onclick: save }, 'Guardar botones')));
   return container;
 }
@@ -908,6 +1053,7 @@ function settingsView() {
 
   return h('section', { id: 'settings' },
     h('h1', {}, 'Ajustes'),
+    testModeCard(),
     h('div', { class: 'card' },
       h('div', { class: 'section-head' }, h('h2', {}, 'QLab (OSC por UDP)'), h('button', { class: 'small', onclick: () => run(() => api('POST', '/api/qlab/reconnect'), 'Reconectando…') }, 'Reconectar')),
       status(q, 'qlab-status'),
@@ -932,8 +1078,21 @@ function settingsView() {
     importExportCard());
 }
 
+function testModeCard() {
+  const on = testMode();
+  return h('div', { class: `card test-card ${on ? 'on' : ''}` },
+    h('div', { class: 'section-head' },
+      h('div', {}, h('h2', {}, '🔌 Conexiones con los equipos'),
+        h('p', { class: 'small muted' }, on
+          ? 'Desconectadas (modo prueba). Las demos y botones funcionan en la web, pero no se envía nada a QLab, WATCHOUT, Constellation ni Keynote.'
+          : 'Conectadas. Apágalas para probar demos y botones sin lanzar nada en la sala.')),
+      h('label', { class: 'switch', title: on ? 'Volver a conectar' : 'Desconectar todo' },
+        h('input', { type: 'checkbox', checked: !on, onchange: (e) => setTestMode(!e.target.checked) }), h('span', {}))),
+    on ? h('p', { class: 'small muted' }, 'Si se reinicia la web, las conexiones vuelven solas.') : null);
+}
+
 function statusLine(snapshot, id) {
-  const cls = snapshot.status === 'connected' ? 'ok' : snapshot.status === 'connecting' ? 'warn' : 'bad';
+  const cls = snapshot.status === 'connected' ? 'ok' : snapshot.status === 'connecting' ? 'warn' : snapshot.status === 'disabled' ? '' : 'bad';
   return h('p', { class: 'small', id }, h('span', { class: `dot ${cls}`, style: { display: 'inline-block', marginRight: '6px' } }),
     snapshot.status === 'connected'
       ? `Conectado${snapshot.version ? ` · versión ${snapshot.version}` : ''}${snapshot.cues && snapshot.workspace ? ` · workspace «${snapshot.workspace}»` : ''}`

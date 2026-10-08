@@ -15,6 +15,7 @@ export class DemoRunner extends EventEmitter {
     this.qlab = qlab;
     this.watchout = watchout;
     this.constellation = constellation;
+    this.testMode = false;
     this.presenter = presenter;
     this.getFile = getFile;
     this.log = log;
@@ -96,6 +97,14 @@ export class DemoRunner extends EventEmitter {
   /** Botón del mando de una demo o de Constellation. */
   async runControl(control) {
     await this.execute(controlToStep(control), null, 'control', null);
+  }
+
+  /** Varias acciones seguidas fuera de una demo (botones de preset de Constellation). */
+  async runSequence(steps) {
+    for (const step of steps) {
+      if (!step.isEnabled) continue;
+      try { await this.execute(step, null, 'control', null); } catch (error) { if (!step.continueOnError) throw error; }
+    }
   }
 
   /** Prueba un paso suelto desde el editor. */
@@ -199,6 +208,11 @@ export class DemoRunner extends EventEmitter {
       this.currentStep = { demoId: demo.id, phase, title: step.title, kind: step.kind };
       this.changed();
     }
+    if (this.testMode && OUTPUT_KINDS.has(step.kind)) {
+      // Modo prueba: la demo avanza igual, pero no se envía nada a los equipos.
+      this.log('🧪', step.title || step.kind, `Simulado (${step.kind}${step.value ? ` ${step.value}` : ''})`);
+      return sleep(150, signal);
+    }
     switch (step.kind) {
       case 'osc': return this.qlab.send(step.value);
       case 'wait': return sleep(Math.max(0, step.delaySeconds) * 1000, signal);
@@ -236,6 +250,8 @@ export class DemoRunner extends EventEmitter {
     });
   }
 }
+
+const OUTPUT_KINDS = new Set(['osc', 'watchoutPlay', 'watchoutPause', 'watchoutStop', 'constellation']);
 
 export function controlToStep(control) {
   const kind = control.kind ?? 'osc';

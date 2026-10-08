@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const LISTS = [
   { id: 11, name: 'Constellation On/Off', comment: 'Confirm=false refresh=false', cues: [30, 32, 31, 33] },
-  { id: 12, name: 'Acoustic Presets', comment: 'Confirm=true refresh=false', cues: [41, 42, 43, 44, 45, 46, 47, 48, 49] },
+  { id: 12, name: 'Acoustic Presets', comment: 'Confirm=true refresh=false', cues: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49] },
   { id: 13, name: 'Reverberation Length', comment: 'Confirm=false refresh=false details=Reverberation', cues: [500, 501, 502, 503, 504, 505, 506] },
   { id: 81, name: 'Calibration', comment: '', cues: [0, 1311] },
   { id: 83, name: 'Measurements', comment: 'tab=Details group=Utilities visible=true', cues: [1101, 1102, 1103] },
@@ -17,7 +17,7 @@ const LISTS = [
 const CUES = {
   0: 'StartUp Calibrate', 11: 'Recall Performance Type on CueList Player 4 (active Cue ID)', 20: 'System Mute = False',
   30: 'Off | Constellation', 31: 'Fade Out | Constellation', 32: 'On | Constellation', 33: 'Fade In | Constellation',
-  41: 'None | Performance Type', 42: 'Presentación | Performance Type', 43: 'Q&A | Performance Type', 44: 'Drama | Performance Type',
+  40: 'none | Performance Type', 41: 'None | Performance Type', 42: 'Presentación | Performance Type', 43: 'Q&A | Performance Type', 44: 'Drama | Performance Type',
   45: 'Jazz | Performance Type', 46: 'Cámara | Performance Type', 47: 'Ópera | Performance Type', 48: 'Sinfónica | Performance Type',
   49: 'Coral | Performance Type', 499: '--- Length ---', 500: 'Shortest | Length', 501: 'Very Short | Length', 502: 'Short | Length',
   503: 'Medium | Length', 504: 'Long | Length', 505: 'Very Long | Length', 506: 'Longest | Length',

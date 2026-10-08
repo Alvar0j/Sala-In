@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3A5BA8"/><stop offset=".6" stop-color="#7A4C9E"/><stop offset="1" stop-color="#2A1847"/></linearGradient>
+    <radialGradient id="halo" cx=".5" cy=".1" r=".6"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".45"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="400" height="240" fill="url(#bg)"/>
+  <rect width="400" height="240" fill="url(#halo)"/>
+  <g fill="#1A1030" opacity=".55"><circle cx="40" cy="118" r="14"/><circle cx="84" cy="114" r="14"/><circle cx="128" cy="112" r="14"/><circle cx="172" cy="110" r="14"/><circle cx="216" cy="110" r="14"/><circle cx="260" cy="112" r="14"/><circle cx="304" cy="114" r="14"/><circle cx="348" cy="118" r="14"/><rect x="0" y="128" width="400" height="30" rx="14"/></g>
+  <g fill="#1A1030" opacity=".75"><circle cx="20" cy="160" r="16"/><circle cx="68" cy="158" r="16"/><circle cx="116" cy="156" r="16"/><circle cx="164" cy="154" r="16"/><circle cx="212" cy="154" r="16"/><circle cx="260" cy="156" r="16"/><circle cx="308" cy="158" r="16"/><circle cx="356" cy="160" r="16"/><rect x="0" y="172" width="400" height="30" rx="16"/></g>
+  <g fill="#120A22"><circle cx="44" cy="204" r="18"/><circle cx="98" cy="202" r="18"/><circle cx="152" cy="200" r="18"/><circle cx="206" cy="200" r="18"/><circle cx="260" cy="202" r="18"/><circle cx="314" cy="204" r="18"/><circle cx="368" cy="206" r="18"/><rect x="0" y="216" width="400" height="30"/></g>
+  <g fill="#FFF0FA" opacity=".9"><ellipse cx="120" cy="56" rx="10" ry="7" transform="rotate(-20 120 56)"/><rect x="128" y="16" width="3" height="40"/><path d="M131 16 q16 6 12 24 q-3 -12 -12 -14z"/><ellipse cx="272" cy="46" rx="10" ry="7" transform="rotate(-20 272 46)"/><ellipse cx="306" cy="38" rx="10" ry="7" transform="rotate(-20 306 38)"/><rect x="280" y="8" width="3" height="38"/><rect x="314" y="0" width="3" height="38"/><path d="M280 8 L317 0 V7 L280 15Z"/></g>
+</svg>

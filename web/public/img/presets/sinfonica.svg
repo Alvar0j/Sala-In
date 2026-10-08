@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0E1C45"/><stop offset="1" stop-color="#050A1C"/></linearGradient>
+    <radialGradient id="light" cx=".5" cy=".95" r=".7"><stop offset="0" stop-color="#F3C969" stop-opacity=".55"/><stop offset="1" stop-color="#F3C969" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="400" height="240" fill="url(#bg)"/>
+  <rect width="400" height="240" fill="url(#light)"/>
+  <g fill="none" stroke="#F3C969" stroke-opacity=".35" stroke-width="2"><path d="M30 240 A170 140 0 0 1 370 240"/><path d="M75 240 A125 100 0 0 1 325 240"/><path d="M120 240 A80 64 0 0 1 280 240"/></g>
+  <g fill="#F3C969">
+    <g opacity=".55"><circle cx="40" cy="190" r="6"/><circle cx="62" cy="150" r="6"/><circle cx="95" cy="118" r="6"/><circle cx="135" cy="98" r="6"/><circle cx="178" cy="88" r="6"/><circle cx="222" cy="88" r="6"/><circle cx="265" cy="98" r="6"/><circle cx="305" cy="118" r="6"/><circle cx="338" cy="150" r="6"/><circle cx="360" cy="190" r="6"/></g>
+    <g opacity=".75"><circle cx="88" cy="200" r="6"/><circle cx="108" cy="168" r="6"/><circle cx="140" cy="146" r="6"/><circle cx="178" cy="136" r="6"/><circle cx="222" cy="136" r="6"/><circle cx="260" cy="146" r="6"/><circle cx="292" cy="168" r="6"/><circle cx="312" cy="200" r="6"/></g>
+    <g><circle cx="136" cy="206" r="6"/><circle cx="160" cy="186" r="6"/><circle cx="200" cy="178" r="6"/><circle cx="240" cy="186" r="6"/><circle cx="264" cy="206" r="6"/></g>
+  </g>
+  <g fill="#FFF3D0"><circle cx="200" cy="216" r="7"/><path d="M190 240 Q192 224 200 222 Q208 224 210 240Z"/></g>
+  <path d="M206 222 L236 196" stroke="#FFF3D0" stroke-width="2.5" stroke-linecap="round"/>
+  <g fill="#F3C969" opacity=".8"><circle cx="60" cy="50" r="7"/><rect x="65" y="18" width="2.5" height="32"/><circle cx="340" cy="40" r="7"/><rect x="345" y="8" width="2.5" height="32"/><path d="M345 8 q14 6 10 22 q-2 -10 -10 -12z"/></g>
+</svg>

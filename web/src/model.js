@@ -7,6 +7,8 @@ export const newID = () => randomUUID().toUpperCase();
 export const STEP_KINDS = ['osc', 'wait', 'confirmation', 'instruction', 'watchoutPlay', 'watchoutPause', 'watchoutStop', 'presentationStart', 'presentationStop', 'constellation'];
 export const CONTROL_KINDS = ['osc', 'watchoutPlay', 'watchoutPause', 'watchoutStop', 'constellation'];
 export const PHASES = ['preparation', 'launch', 'finish'];
+// Acciones extra que puede llevar un botón de preset de Constellation.
+export const PRESET_ACTION_KINDS = ['watchoutPlay', 'watchoutPause', 'watchoutStop', 'osc', 'constellation', 'wait'];
 
 export const DEFAULT_COMMANDS = {
   powerOnCommand: '/go/104',
@@ -55,6 +57,20 @@ export function normalizeControl(control) {
   return result;
 }
 
+// Fondo de un botón: ilustración incluida («preset:jazz») o imagen subida («upload:<id>.png»).
+const image = (value) => (/^(preset:[a-z]{1,24}|upload:[A-F0-9-]{36}\.(png|jpg|webp))$/.test(value ?? '') ? value : '');
+
+/** Botón de la pestaña Constellation: un preset acústico y, opcionalmente, más acciones (WATCHOUT…). */
+export function normalizePresetButton(button) {
+  const cue = str(button.cue, '', 10).trim();
+  return {
+    id: id(button.id), title: str(button.title, 'Preset', 80).trim() || 'Preset',
+    cue: /^\d+$/.test(cue) ? cue : '', image: image(button.image), colorHex: hex(button.colorHex, '#18B4C9'),
+    requiresConfirmation: bool(button.requiresConfirmation, true),
+    actions: ordered(button.actions, normalizeStep).filter((step) => PRESET_ACTION_KINDS.includes(step.kind)),
+  };
+}
+
 export function normalizeDemo(demo) {
   const room = str(demo.roomConfigurationCommand, '', 500).trim();
   return {
@@ -78,13 +94,14 @@ export function normalizeCommands(commands = {}) {
 }
 
 export function emptyConfig() {
-  return { demos: [], constellationButtons: [], commands: { ...DEFAULT_COMMANDS }, profiles: [], panels: [] };
+  return { demos: [], constellationButtons: [], presetButtons: [], commands: { ...DEFAULT_COMMANDS }, profiles: [], panels: [] };
 }
 
 export function normalizeConfig(config = {}) {
   return {
     demos: ordered(config.demos, normalizeDemo),
     constellationButtons: ordered(config.constellationButtons, normalizeControl),
+    presetButtons: ordered(config.presetButtons, normalizePresetButton),
     commands: normalizeCommands(config.commands),
     profiles: Array.isArray(config.profiles) ? config.profiles : [],
     panels: Array.isArray(config.panels) ? config.panels : [],
@@ -96,7 +113,7 @@ export function exportPackage(config) {
   return {
     format: 'QLabRemoteCues', version: 1, exportedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
     profiles: config.profiles, panels: config.panels, demos: config.demos,
-    constellationButtons: config.constellationButtons, ...config.commands,
+    constellationButtons: config.constellationButtons, presetButtons: config.presetButtons, ...config.commands,
   };
 }
 
@@ -109,7 +126,7 @@ export function importPackage(current, data) {
     const commands = { ...current.commands };
     for (const name of COMMAND_NAMES) if (typeof data[name] === 'string') commands[name] = data[name];
     const config = normalizeConfig({
-      demos: data.demos, constellationButtons: data.constellationButtons ?? [], commands,
+      demos: data.demos, constellationButtons: data.constellationButtons ?? [], presetButtons: data.presetButtons ?? current.presetButtons, commands,
       profiles: data.profiles ?? [], panels: data.panels ?? [],
     });
     return { config, profile: config.profiles[0] ?? null, summary: `${config.demos.length} demos, ${config.constellationButtons.length} botones de Constellation` };

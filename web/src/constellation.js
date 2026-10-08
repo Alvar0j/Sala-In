@@ -162,6 +162,15 @@ export function parseCueCatalog(listsText, cuesText) {
       .filter((e) => cues.has(e.cueId) && !/^-{2,}/.test(cues.get(e.cueId)))
       .map((e) => ({ id: e.cueId, name: shortName(cues.get(e.cueId)) }));
     if (!items.length) continue;
+    // El NADIA tiene a veces dos cues con el mismo nombre («none» y «None»): se queda el último.
+    const byName = new Map();
+    for (const item of items) {
+      const key = item.name.toLocaleLowerCase('es');
+      const previous = byName.get(key);
+      if (previous) Object.assign(previous, item); else byName.set(key, item);
+    }
+    items.length = 0;
+    items.push(...byName.values());
     for (const item of items) shown.add(item.id);
     groups.push({ id: list.id, name: list.name, confirm: list.confirm, cues: items });
   }

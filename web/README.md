@@ -115,7 +115,9 @@ curl -s "http://10.1.1.25:8080/cmd?print_default/cuelists"   # listas de cues (O
 En Ajustes → **Constellation**: IP `10.1.1.25` (red AVB, la del Mac mini en `en12`) y puerto `8080`. Al
 guardar aparecen:
 
-- en la pestaña **Constellation**, botones con los **Acoustic Presets**;
+- en la pestaña **Constellation**, botones con los **Acoustic Presets**, cada uno con una ilustración de fondo.
+  Con **✏️ Editar** puedes cambiar el título, el preset, la imagen (incluidas o una tuya en PNG/JPG/WEBP) y
+  añadir **acciones extra** al pulsar: reproducir o parar un timeline de WATCHOUT, un cue de QLab…;
 - en el editor de demos, el paso **Constellation: preset acústico**, con un desplegable de presets. Lo
   normal es *On* + preset al lanzar, y *None* + *Off* en la Finalización.
 
@@ -209,6 +211,13 @@ El registro de la web queda en `/tmp/salain.log`. Para pararla:
 
 > [!TIP]
 > Da al Mac mini una **IP fija** (o una reserva DHCP en el router) para que la dirección de la web no cambie.
+
+### Modo prueba (desconectar todo)
+
+En **Ajustes → Conexiones con los equipos** hay un interruptor que corta QLab, WATCHOUT, Constellation y Keynote
+(este último pasa al reproductor simulado). Las demos y los botones se ejecutan en la web y quedan en el
+**Registro** con 🧪, pero no se envía nada a la sala. Una franja naranja arriba avisa mientras está activo.
+Dura hasta que lo vuelves a encender o se reinicia la web.
 
 ## 7. Uso diario
 

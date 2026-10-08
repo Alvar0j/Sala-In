@@ -11,8 +11,9 @@ import { ConstellationClient } from './constellation.js';
 import { DemoRunner } from './runner.js';
 import { Presenter } from './presenter.js';
 import { FileStore } from './files.js';
+import { ImageStore } from './images.js';
 import {
-  normalizeDemo, normalizeControl, normalizeCommands, normalizeStep, exportPackage, importPackage, newID, COMMAND_NAMES,
+  normalizeDemo, normalizeControl, normalizeCommands, normalizeStep, normalizePresetButton, exportPackage, importPackage, newID, COMMAND_NAMES,
 } from './model.js';
 
 const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
@@ -31,6 +32,7 @@ export function createApp({
 } = {}) {
   const store = new Store(dataDir);
   const files = new FileStore(dataDir);
+  const images = new ImageStore(dataDir);
   const auth = new Auth(store);
   const activity = [];
   const clients = new Set();
@@ -58,7 +60,7 @@ export function createApp({
   // --- tiempo real -------------------------------------------------------------
   const state = () => ({
     qlab: qlab.snapshot(), watchout: watchout.snapshot(), constellation: constellation.snapshot(),
-    runner: runner.snapshot(), presentation: presenter.snapshot(),
+    runner: runner.snapshot(), presentation: presenter.snapshot(), testMode: runner.testMode,
   });
   let pending = null;
   const scheduleState = () => {
@@ -162,13 +164,58 @@ export function createApp({
   route('POST', '/api/nadia/recall/:cue', 'operador', async ({ params }) => {
     if (!/^\d+$/.test(params.cue)) throw new HttpError(400, 'Cue no válido.');
     if (!constellation.groups.some((g) => g.cues.some((c) => c.id === params.cue))) throw new HttpError(404, 'Ese preset no está en la lista de Constellation.');
-    try { await constellation.run(params.cue); } catch (error) { throw new HttpError(502, error.message); }
+    try { await runner.runSequence([{ kind: 'constellation', title: `Constellation cue ${params.cue}`, value: params.cue, isEnabled: true }]); } catch (error) { throw new HttpError(502, error.message); }
     return { ok: true };
+  });
+  route('POST', '/api/presets/:id', 'operador', async ({ params }) => {
+    const button = store.config.presetButtons.find((b) => b.id === params.id);
+    if (!button) throw new HttpError(404, 'Botón no encontrado.');
+    const steps = [
+      ...(button.cue ? [{ kind: 'constellation', title: `Preset ${button.title}`, value: button.cue, isEnabled: true, continueOnError: false }] : []),
+      ...button.actions,
+    ];
+    try { await runner.runSequence(steps); } catch (error) { throw new HttpError(502, error.message); }
+    return { ok: true };
+  });
+  route('PUT', '/api/presets', 'editor', ({ body }) => {
+    const buttons = (Array.isArray(body.buttons) ? body.buttons : []).map((b, order) => normalizePresetButton({ ...b, order }));
+    saveConfig({ ...store.config, presetButtons: buttons.map((b, order) => ({ ...b, order })) });
+    return { ok: true };
+  });
+  route('POST', '/api/images', 'editor', async ({ req, url }) => ({ image: await images.upload(req, url.searchParams.get('name')) }), { raw: true });
+  route('GET', '/api/images/:name', 'operador', ({ params, res }) => {
+    const found = images.resolve(params.name);
+    if (!found) throw new HttpError(404, 'Imagen no encontrada.');
+    res.writeHead(200, { 'Content-Type': found.type, 'Cache-Control': 'private, max-age=86400' });
+    fs.createReadStream(found.file).pipe(res);
+  }, { stream: true });
+
+  // Modo prueba: corta todas las conexiones; las demos se ejecutan sin enviar nada.
+  // Solo dura hasta que se reinicia la web, para que la sala nunca se quede «muda» sin querer.
+  route('PUT', '/api/test-mode', 'admin', ({ body, user }) => {
+    const enabled = body.enabled === true;
+    if (enabled === runner.testMode) return { testMode: enabled };
+    runner.testMode = enabled;
+    if (enabled) {
+      qlab.stop(); qlab.setStatus('disabled', 'Desconectado (modo prueba)');
+      watchout.stop(); watchout.setStatus('disabled', 'Desconectado (modo prueba)');
+      constellation.stop(); constellation.setStatus('disabled', 'Desconectado (modo prueba)');
+      presenter.configure({ driver: 'simulado' });
+    } else {
+      qlab.configure(store.settings.qlab);
+      watchout.configure(store.settings.watchout);
+      constellation.configure(store.settings.constellation);
+      presenter.configure(store.settings.presentation);
+    }
+    log('🧪', 'Modo prueba', `${enabled ? 'Activado: no se envía nada a los equipos' : 'Desactivado: conexiones restablecidas'} (${user.username})`);
+    scheduleState();
+    return { testMode: enabled };
   });
   route('POST', '/api/commands/:name', 'operador', async ({ params }) => {
     if (!COMMAND_NAMES.includes(params.name)) throw new HttpError(404, 'Comando desconocido.');
     const command = store.config.commands[params.name];
     if (!command) throw new HttpError(409, 'Comando sin configurar.');
+    if (runner.testMode) { log('🧪', params.name, `Simulado (${command})`); return { ok: true }; }
     await qlab.send(command);
     return { ok: true };
   });
@@ -258,16 +305,20 @@ export function createApp({
       next.presentation = { driver, watchoutTimelineId: String(body.presentation.watchoutTimelineId ?? '').trim().slice(0, 64) };
     }
     store.saveSettings(next);
-    if (body.qlab) qlab.configure(next.qlab);
-    if (body.watchout) watchout.configure(next.watchout);
-    if (body.constellation) constellation.configure(next.constellation);
-    if (body.presentation) presenter.configure(next.presentation);
+    if (!runner.testMode) {
+      // En modo prueba se guardan, pero no se conecta hasta desactivarlo.
+      if (body.qlab) qlab.configure(next.qlab);
+      if (body.watchout) watchout.configure(next.watchout);
+      if (body.constellation) constellation.configure(next.constellation);
+      if (body.presentation) presenter.configure(next.presentation);
+    }
     log('•', 'Ajustes', `Conexiones actualizadas por ${user.username}`);
     return publicSettings();
   });
-  route('POST', '/api/qlab/reconnect', 'admin', () => { qlab.restart(); return { ok: true }; });
-  route('POST', '/api/watchout/refresh', 'admin', async () => { await watchout.poll(); return { ok: true }; });
+  route('POST', '/api/qlab/reconnect', 'admin', () => { notInTestMode(); qlab.restart(); return { ok: true }; });
+  route('POST', '/api/watchout/refresh', 'admin', async () => { notInTestMode(); await watchout.poll(); return { ok: true }; });
   route('POST', '/api/nadia/refresh', 'admin', async () => {
+    notInTestMode();
     constellation.groups = [];
     await constellation.poll();
     return { ok: true };
@@ -282,6 +333,9 @@ export function createApp({
     return { ok: true };
   });
 
+  function notInTestMode() {
+    if (runner.testMode) throw new HttpError(409, 'Modo prueba activo: desactívalo en Ajustes para conectar.');
+  }
   function requireDemo(id) {
     const demo = store.config.demos.find((d) => d.id === id);
     if (!demo) throw new HttpError(404, 'Demo no encontrada.');
@@ -384,6 +438,7 @@ export function createApp({
     const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1])]));
     const body = req.method === 'GET' || r.raw ? {} : await readBody(req);
     const result = await r.handler({ req, res, params, body, user, url });
+    if (r.stream) return;
     json(res, 200, result ?? { ok: true });
   }
 

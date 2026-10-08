@@ -28,7 +28,7 @@ function seed() {
   fs.mkdirSync(dataDir, { recursive: true });
   const write = (name, value) => fs.writeFileSync(path.join(dataDir, name), JSON.stringify(value, null, 2));
   write('settings.json', {
-    qlab: { host: '127.0.0.1', port: QLAB_PORT, workspace: 'Sala', replyPort: QLAB_PORT - 1, passcode: '' },
+    qlab: { host: '127.0.0.1', port: QLAB_PORT, workspace: '', replyPort: QLAB_PORT - 1, passcode: '' },
     watchout: { host: '127.0.0.1', port: WATCHOUT_PORT },
     constellation: { host: '127.0.0.1', port: NADIA_PORT },
     presentation: { driver: 'simulado', watchoutTimelineId: '30' },

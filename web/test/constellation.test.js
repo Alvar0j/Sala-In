@@ -21,7 +21,8 @@ test('lee los presets del NADIA y oculta calibración y mediciones', async (t) =
   assert.deepEqual(names, ['Constellation On/Off', 'Acoustic Presets', 'Reverberation Length']);
   const presets = client.groups.find((g) => g.name === 'Acoustic Presets');
   assert.equal(presets.confirm, true);
-  assert.deepEqual(presets.cues.slice(0, 2), [{ id: '41', name: 'None' }, { id: '42', name: 'Presentación' }]);
+  assert.deepEqual(presets.cues.slice(0, 2), [{ id: '41', name: 'None' }, { id: '42', name: 'Presentación' }], '«none» repetido se quita');
+  assert.equal(presets.cues.length, 9);
   assert.ok(!client.groups.find((g) => g.name === 'Reverberation Length').cues.some((c) => c.name.startsWith('---')));
 
   await client.run('48');
@@ -67,4 +68,67 @@ test('una demo pone el preset al lanzar y lo quita al finalizar', async (t) => {
   runner.finish('D1', 'test');
   await until(() => runner.stateOf('D1') === 'completed');
   assert.deepEqual(mock.state.recalled, [32, 48, 30]);
+});
+
+test('botones de preset con acciones de WATCHOUT, imágenes y modo prueba', async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'salain-presets-'));
+  const mock = await startMockNadia({ port: 0, log: () => {} });
+  const played = [];
+  const watchout = Object.assign(new (await import('node:events')).EventEmitter(), {
+    snapshot: () => ({ status: 'connected', timelines: [] }), configure() {}, stop() {}, setStatus() {}, loadTimelines: async () => [],
+    play: async (id) => { played.push(id); }, pause: async () => {}, stopTimeline: async () => {},
+  });
+  const { server, constellation } = createApp({ dataDir, watchout, loginDelayMs: 0 });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  t.after(() => { server.close(); mock.close(); fs.rmSync(dataDir, { recursive: true, force: true }); });
+
+  let cookie = '';
+  const call = async (method, url, body, headers = {}) => {
+    const res = await fetch(base + url, {
+      method, headers: { ...(body !== undefined && !headers['X-Salain-Upload'] ? { 'Content-Type': 'application/json' } : {}), ...(cookie ? { Cookie: cookie } : {}), ...headers },
+      body: body === undefined ? undefined : headers['X-Salain-Upload'] ? body : JSON.stringify(body),
+    });
+    const setCookie = res.headers.get('set-cookie');
+    if (setCookie) cookie = setCookie.split(';')[0];
+    return { status: res.status, type: res.headers.get('content-type'), body: res.headers.get('content-type')?.includes('json') ? await res.json() : await res.arrayBuffer() };
+  };
+  await call('POST', '/api/setup', { username: 'admin', password: 'secreto1' });
+  await call('PUT', '/api/settings', { constellation: { host: '127.0.0.1', port: mock.port } });
+  for (let i = 0; i < 100 && !constellation.groups.length; i++) await new Promise((r) => setTimeout(r, 10));
+
+  // Imagen propia
+  const png = Buffer.from('89504E470D0A1A0A0000000D49484452', 'hex');
+  const up = await call('POST', '/api/images?name=fondo.png', png, { 'X-Salain-Upload': '1', 'Content-Type': 'application/octet-stream' });
+  assert.equal(up.status, 200);
+  assert.match(up.body.image, /^upload:[A-F0-9-]{36}\.png$/);
+  const img = await call('GET', `/api/images/${up.body.image.slice(7)}`);
+  assert.equal(img.type, 'image/png');
+  assert.equal(Buffer.from(img.body).length, png.length);
+  assert.equal((await call('POST', '/api/images?name=x.svg', png, { 'X-Salain-Upload': '1' })).status, 400);
+  assert.equal((await call('GET', '/api/images/..%2Fusers.json')).status, 404);
+
+  // Botón: preset Ópera + timeline 24 de WATCHOUT
+  const saved = await call('PUT', '/api/presets', { buttons: [{ title: 'Ópera', cue: '47', image: up.body.image, actions: [{ kind: 'watchoutPlay', title: 'Telón', value: '24' }, { kind: 'presentationStart', value: 'x' }] }] });
+  assert.equal(saved.status, 200);
+  const boot = await call('GET', '/api/bootstrap');
+  const [button] = boot.body.config.presetButtons;
+  assert.equal(button.actions.length, 1, 'solo se guardan acciones permitidas');
+  assert.equal(button.image, up.body.image);
+  assert.equal((await call('POST', `/api/presets/${button.id}`, {})).status, 200);
+  assert.deepEqual(mock.state.recalled, [47]);
+  assert.deepEqual(played, ['24']);
+
+  // Modo prueba: nada sale hacia los equipos
+  assert.equal((await call('PUT', '/api/test-mode', { enabled: true })).body.testMode, true);
+  assert.equal((await call('GET', '/api/bootstrap')).body.state.testMode, true);
+  assert.equal((await call('POST', `/api/presets/${button.id}`, {})).status, 200);
+  assert.equal((await call('POST', '/api/nadia/recall/42', {})).status, 200);
+  assert.deepEqual(mock.state.recalled, [47]);
+  assert.deepEqual(played, ['24']);
+  assert.equal((await call('POST', '/api/nadia/refresh', {})).status, 409);
+  await call('PUT', '/api/test-mode', { enabled: false });
+  for (let i = 0; i < 100 && !constellation.groups.length; i++) await new Promise((r) => setTimeout(r, 10));
+  assert.equal((await call('POST', '/api/nadia/recall/42', {})).status, 200);
+  assert.deepEqual(mock.state.recalled, [47, 42]);
 });
